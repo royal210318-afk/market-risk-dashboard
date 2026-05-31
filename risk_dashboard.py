@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
 from datetime import datetime
 
 st.set_page_config(
@@ -13,7 +12,8 @@ st.set_page_config(
 API_KEY = st.secrets["TWELVE_API_KEY"]
 
 st.title("📈 市场风险仪表盘")
-st.caption("Fear & Greed + SPY + QQQ + TLT + GLD")
+st.caption("恐惧贪婪指数 · VIX恐慌指数 · 标普500 · 纳斯达克100 · 美债ETF · 黄金ETF")
+
 
 # -----------------------
 # Fear & Greed
@@ -30,7 +30,7 @@ def get_fear_greed():
 
 
 # -----------------------
-# Twelve Data
+# Twelve Data：历史数据
 # -----------------------
 @st.cache_data(ttl=1800)
 def get_history(symbol):
@@ -42,34 +42,103 @@ def get_history(symbol):
         f"&apikey={API_KEY}"
     )
 
-    r = requests.get(url, timeout=30)
-    data = r.json()
+    try:
+        r = requests.get(url, timeout=30)
+        data = r.json()
 
-    if data.get("status") != "ok":
+        if data.get("status") != "ok":
+            return None
+
+        df = pd.DataFrame(data["values"])
+        df["close"] = df["close"].astype(float)
+        df["high"] = df["high"].astype(float)
+
+        return df
+
+    except:
         return None
 
-    df = pd.DataFrame(data["values"])
 
-    df["close"] = df["close"].astype(float)
-    df["high"] = df["high"].astype(float)
+# -----------------------
+# Twelve Data：当前价格
+# -----------------------
+@st.cache_data(ttl=1800)
+def get_price(symbol):
+    url = (
+        f"https://api.twelvedata.com/price"
+        f"?symbol={symbol}"
+        f"&apikey={API_KEY}"
+    )
 
-    return df
+    try:
+        r = requests.get(url, timeout=20)
+        data = r.json()
+
+        if "price" in data:
+            return round(float(data["price"]), 2)
+
+        return None
+
+    except:
+        return None
 
 
 # -----------------------
 # 计算回调
 # -----------------------
 def calc_drawdown(df):
+    if df is None or df.empty:
+        return None, None
+
     latest = float(df.iloc[0]["close"])
     high52 = float(df["high"].max())
-
     drawdown = (latest - high52) / high52 * 100
 
     return round(latest, 2), round(drawdown, 2)
 
 
 # -----------------------
-# 数据
+# 指标状态
+# -----------------------
+def fear_status(fg):
+    if fg < 25:
+        return "极度恐惧"
+    elif fg < 45:
+        return "恐惧"
+    elif fg < 75:
+        return "中性"
+    else:
+        return "极度贪婪"
+
+
+def drawdown_status(dd):
+    if dd is None:
+        return "获取失败"
+    if dd > -5:
+        return "接近高位"
+    elif dd > -10:
+        return "轻度回调"
+    elif dd > -20:
+        return "明显回调"
+    else:
+        return "深度回调"
+
+
+def vix_status(vix):
+    if vix is None:
+        return "获取失败"
+    if vix < 18:
+        return "低波动"
+    elif vix < 25:
+        return "正常波动"
+    elif vix < 35:
+        return "恐慌升温"
+    else:
+        return "极端恐慌"
+
+
+# -----------------------
+# 获取数据
 # -----------------------
 fg = get_fear_greed()
 
@@ -81,46 +150,68 @@ gld_df = get_history("GLD")
 spy_price, spy_dd = calc_drawdown(spy_df)
 qqq_price, qqq_dd = calc_drawdown(qqq_df)
 
-tlt_price = round(float(tlt_df.iloc[0]["close"]), 2)
-gld_price = round(float(gld_df.iloc[0]["close"]), 2)
+tlt_price = round(float(tlt_df.iloc[0]["close"]), 2) if tlt_df is not None else None
+gld_price = round(float(gld_df.iloc[0]["close"]), 2) if gld_df is not None else None
+
+# VIX：Twelve Data 不一定支持，失败则显示“获取失败”
+vix = get_price("VIX")
 
 
 # -----------------------
 # 风险评分
 # -----------------------
 risk = 0
+valid_items = 0
 
 # Fear & Greed
-if fg < 25:
-    risk += 80
-elif fg < 45:
-    risk += 50
-elif fg < 75:
-    risk += 20
-else:
-    risk += 70
+if fg is not None:
+    valid_items += 1
+    if fg < 25:
+        risk += 80
+    elif fg < 45:
+        risk += 50
+    elif fg < 75:
+        risk += 20
+    else:
+        risk += 70
 
 # SPY
-if spy_dd > -5:
-    risk += 10
-elif spy_dd > -10:
-    risk += 40
-elif spy_dd > -20:
-    risk += 70
-else:
-    risk += 90
+if spy_dd is not None:
+    valid_items += 1
+    if spy_dd > -5:
+        risk += 10
+    elif spy_dd > -10:
+        risk += 40
+    elif spy_dd > -20:
+        risk += 70
+    else:
+        risk += 90
 
 # QQQ
-if qqq_dd > -5:
-    risk += 10
-elif qqq_dd > -10:
-    risk += 40
-elif qqq_dd > -20:
-    risk += 70
-else:
-    risk += 90
+if qqq_dd is not None:
+    valid_items += 1
+    if qqq_dd > -5:
+        risk += 10
+    elif qqq_dd > -10:
+        risk += 40
+    elif qqq_dd > -20:
+        risk += 70
+    else:
+        risk += 90
 
-risk_score = round(risk / 3)
+# VIX
+if vix is not None:
+    valid_items += 1
+    if vix < 18:
+        risk += 10
+    elif vix < 25:
+        risk += 30
+    elif vix < 35:
+        risk += 60
+    else:
+        risk += 90
+
+risk_score = round(risk / valid_items) if valid_items > 0 else 0
 
 
 # -----------------------
@@ -177,41 +268,62 @@ c1, c2, c3 = st.columns(3)
 
 c1.metric(
     "恐惧贪婪指数",
-    round(fg, 1)
+    round(fg, 1),
+    fear_status(fg)
 )
 
 c2.metric(
-    "标普500距52周高点",
-    f"{spy_dd}%"
+    "VIX恐慌指数",
+    vix if vix is not None else "获取失败",
+    vix_status(vix)
 )
 
 c3.metric(
-    "纳斯达克100距52周高点",
-    f"{qqq_dd}%"
+    "综合市场风险",
+    f"{risk_score}/100"
 )
 
 c4, c5, c6 = st.columns(3)
 
 c4.metric(
-    "美国20年期国债ETF",
-    tlt_price
+    "标普500回调",
+    f"{spy_dd}%" if spy_dd is not None else "获取失败",
+    drawdown_status(spy_dd)
 )
 
 c5.metric(
-    "黄金ETF",
-    gld_price
+    "纳斯达克100回调",
+    f"{qqq_dd}%" if qqq_dd is not None else "获取失败",
+    drawdown_status(qqq_dd)
 )
 
 c6.metric(
-    "综合市场风险",
-    f"{risk_score}/100"
+    "美国20年期国债ETF",
+    tlt_price if tlt_price is not None else "获取失败"
+)
+
+c7, c8, c9 = st.columns(3)
+
+c7.metric(
+    "黄金ETF",
+    gld_price if gld_price is not None else "获取失败"
+)
+
+c8.metric(
+    "SPY最新价",
+    spy_price if spy_price is not None else "获取失败"
+)
+
+c9.metric(
+    "QQQ最新价",
+    qqq_price if qqq_price is not None else "获取失败"
 )
 
 st.markdown("---")
 
 
 # -----------------------
-# 场景显示
+# 市场状态
 # -----------------------
 st.subheader("市场状态")
 
@@ -224,45 +336,96 @@ elif risk_score < 60:
 else:
     st.error(scene)
 
+
+# -----------------------
+# 加仓计划
+# -----------------------
 st.subheader("美股回调加仓计划")
+
 st.info(advice)
+
+plan = pd.DataFrame(
+    {
+        "风险评分区间": [
+            "0 - 20",
+            "20 - 40",
+            "40 - 60",
+            "60以上"
+        ],
+        "市场阶段": [
+            "正常市场",
+            "第一档回调",
+            "第二档回调",
+            "极端恐慌"
+        ],
+        "资金动作": [
+            "正常定投",
+            "投入预备资金30%",
+            "再投入预备资金30%",
+            "投入剩余资金40%"
+        ],
+        "累计投入": [
+            "按定投计划",
+            "30%",
+            "60%",
+            "100%"
+        ],
+        "剩余现金": [
+            "回调资金不动用",
+            "70%",
+            "40%",
+            "0%"
+        ]
+    }
+)
+
+st.dataframe(
+    plan,
+    use_container_width=True,
+    hide_index=True
+)
 
 st.markdown("---")
 
 
 # -----------------------
-# 风险趋势图
+# 当前市场信号
 # -----------------------
-history = pd.DataFrame({
-    "日期": [
-        "5天前",
-        "4天前",
-        "3天前",
-        "2天前",
-        "昨天",
-        "今天"
-    ],
-    "风险": [
-        min(risk_score + 15, 100),
-        min(risk_score + 12, 100),
-        min(risk_score + 8, 100),
-        min(risk_score + 5, 100),
-        min(risk_score + 2, 100),
-        risk_score
-    ]
-})
+st.subheader("当前市场信号")
 
-fig = px.line(
-    history,
-    x="日期",
-    y="风险",
-    markers=True,
-    title="风险评分趋势"
+signal_table = pd.DataFrame(
+    {
+        "指标": [
+            "恐惧贪婪指数",
+            "VIX恐慌指数",
+            "标普500回调",
+            "纳斯达克100回调",
+            "美国20年期国债ETF",
+            "黄金ETF"
+        ],
+        "数值": [
+            round(fg, 1),
+            vix if vix is not None else "获取失败",
+            f"{spy_dd}%" if spy_dd is not None else "获取失败",
+            f"{qqq_dd}%" if qqq_dd is not None else "获取失败",
+            tlt_price if tlt_price is not None else "获取失败",
+            gld_price if gld_price is not None else "获取失败"
+        ],
+        "状态": [
+            fear_status(fg),
+            vix_status(vix),
+            drawdown_status(spy_dd),
+            drawdown_status(qqq_dd),
+            "观察利率预期",
+            "观察避险需求"
+        ]
+    }
 )
 
-st.plotly_chart(
-    fig,
-    use_container_width=True
+st.dataframe(
+    signal_table,
+    use_container_width=True,
+    hide_index=True
 )
 
 st.markdown("---")
