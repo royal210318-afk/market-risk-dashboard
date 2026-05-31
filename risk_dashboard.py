@@ -28,12 +28,12 @@ def get_fear_greed():
     except:
         return 50.0
 
+
 # -----------------------
 # Twelve Data
 # -----------------------
 @st.cache_data(ttl=1800)
 def get_history(symbol):
-
     url = (
         f"https://api.twelvedata.com/time_series"
         f"?symbol={symbol}"
@@ -43,7 +43,6 @@ def get_history(symbol):
     )
 
     r = requests.get(url, timeout=30)
-
     data = r.json()
 
     if data.get("status") != "ok":
@@ -56,22 +55,18 @@ def get_history(symbol):
 
     return df
 
+
 # -----------------------
 # 计算回调
 # -----------------------
 def calc_drawdown(df):
-
     latest = float(df.iloc[0]["close"])
-
     high52 = float(df["high"].max())
 
-    drawdown = (
-        (latest - high52)
-        / high52
-        * 100
-    )
+    drawdown = (latest - high52) / high52 * 100
 
     return round(latest, 2), round(drawdown, 2)
+
 
 # -----------------------
 # 数据
@@ -89,13 +84,13 @@ qqq_price, qqq_dd = calc_drawdown(qqq_df)
 tlt_price = round(float(tlt_df.iloc[0]["close"]), 2)
 gld_price = round(float(gld_df.iloc[0]["close"]), 2)
 
+
 # -----------------------
 # 风险评分
 # -----------------------
 risk = 0
 
 # Fear & Greed
-
 if fg < 25:
     risk += 80
 elif fg < 45:
@@ -106,7 +101,6 @@ else:
     risk += 70
 
 # SPY
-
 if spy_dd > -5:
     risk += 10
 elif spy_dd > -10:
@@ -117,7 +111,6 @@ else:
     risk += 90
 
 # QQQ
-
 if qqq_dd > -5:
     risk += 10
 elif qqq_dd > -10:
@@ -129,32 +122,53 @@ else:
 
 risk_score = round(risk / 3)
 
+
 # -----------------------
-# 场景
+# 场景：美股回调加仓策略
 # -----------------------
-if risk_score < 30:
+if risk_score < 20:
+    scene = "🟢 正常市场"
+    advice = """
+当前策略：正常定投
 
-    scene = "🟢 市场正常"
+市场风险较低，按原计划持续定投即可。
 
-    advice = "正常定投"
+回调加仓资金暂不动用。
+"""
 
-elif risk_score < 50:
+elif risk_score < 40:
+    scene = "🟡 第一档回调"
+    advice = """
+当前策略：执行第一档加仓
 
-    scene = "🟡 市场回调"
+建议投入预备资金：30%
 
-    advice = "分批加仓"
+累计投入：30%
+剩余现金：70%
+"""
 
-elif risk_score < 70:
+elif risk_score < 60:
+    scene = "🟠 第二档回调"
+    advice = """
+当前策略：执行第二档加仓
 
-    scene = "🟠 谨慎观察"
+建议再投入预备资金：30%
 
-    advice = "控制仓位"
+累计投入：60%
+剩余现金：40%
+"""
 
 else:
+    scene = "🔴 极端恐慌"
+    advice = """
+当前策略：执行第三档加仓
 
-    scene = "🔴 高风险"
+建议投入剩余资金：40%
 
-    advice = "避免追高"
+累计投入：100%
+剩余现金：0%
+"""
+
 
 # -----------------------
 # 指标卡片
@@ -162,55 +176,65 @@ else:
 c1, c2, c3 = st.columns(3)
 
 c1.metric(
-    "Fear & Greed",
+    "恐惧贪婪指数",
     round(fg, 1)
 )
 
 c2.metric(
-    "SPY回调",
+    "标普500距52周高点",
     f"{spy_dd}%"
 )
 
 c3.metric(
-    "QQQ回调",
+    "纳斯达克100距52周高点",
     f"{qqq_dd}%"
 )
 
 c4, c5, c6 = st.columns(3)
 
 c4.metric(
-    "TLT",
+    "美国20年期国债ETF",
     tlt_price
 )
 
 c5.metric(
-    "GLD",
+    "黄金ETF",
     gld_price
 )
 
 c6.metric(
-    "风险评分",
+    "综合市场风险",
     f"{risk_score}/100"
 )
 
 st.markdown("---")
 
+
 # -----------------------
-# 场景
+# 场景显示
 # -----------------------
 st.subheader("市场状态")
 
-st.success(scene)
+if risk_score < 20:
+    st.success(scene)
+elif risk_score < 40:
+    st.warning(scene)
+elif risk_score < 60:
+    st.warning(scene)
+else:
+    st.error(scene)
 
+st.subheader("美股回调加仓计划")
 st.info(advice)
 
 st.markdown("---")
+
 
 # -----------------------
 # 风险趋势图
 # -----------------------
 history = pd.DataFrame({
-    "日期":[
+    "日期": [
         "5天前",
         "4天前",
         "3天前",
@@ -218,12 +242,12 @@ history = pd.DataFrame({
         "昨天",
         "今天"
     ],
-    "风险":[
-        min(risk_score+15,100),
-        min(risk_score+12,100),
-        min(risk_score+8,100),
-        min(risk_score+5,100),
-        min(risk_score+2,100),
+    "风险": [
+        min(risk_score + 15, 100),
+        min(risk_score + 12, 100),
+        min(risk_score + 8, 100),
+        min(risk_score + 5, 100),
+        min(risk_score + 2, 100),
         risk_score
     ]
 })
