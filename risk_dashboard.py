@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+import yfinance as yf
 from datetime import datetime
 
 st.set_page_config(
@@ -30,6 +31,24 @@ def get_fear_greed():
 
 
 # -----------------------
+# VIX：Yahoo Finance
+# -----------------------
+@st.cache_data(ttl=1800)
+def get_vix():
+    try:
+        vix = yf.Ticker("^VIX")
+        hist = vix.history(period="5d")
+
+        if hist is None or hist.empty:
+            return None
+
+        return round(float(hist["Close"].iloc[-1]), 2)
+
+    except:
+        return None
+
+
+# -----------------------
 # Twelve Data：历史数据
 # -----------------------
 @st.cache_data(ttl=1800)
@@ -50,34 +69,11 @@ def get_history(symbol):
             return None
 
         df = pd.DataFrame(data["values"])
+
         df["close"] = df["close"].astype(float)
         df["high"] = df["high"].astype(float)
 
         return df
-
-    except:
-        return None
-
-
-# -----------------------
-# Twelve Data：当前价格
-# -----------------------
-@st.cache_data(ttl=1800)
-def get_price(symbol):
-    url = (
-        f"https://api.twelvedata.com/price"
-        f"?symbol={symbol}"
-        f"&apikey={API_KEY}"
-    )
-
-    try:
-        r = requests.get(url, timeout=20)
-        data = r.json()
-
-        if "price" in data:
-            return round(float(data["price"]), 2)
-
-        return None
 
     except:
         return None
@@ -92,6 +88,7 @@ def calc_drawdown(df):
 
     latest = float(df.iloc[0]["close"])
     high52 = float(df["high"].max())
+
     drawdown = (latest - high52) / high52 * 100
 
     return round(latest, 2), round(drawdown, 2)
@@ -141,6 +138,7 @@ def vix_status(vix):
 # 获取数据
 # -----------------------
 fg = get_fear_greed()
+vix = get_vix()
 
 spy_df = get_history("SPY")
 qqq_df = get_history("QQQ")
@@ -152,9 +150,6 @@ qqq_price, qqq_dd = calc_drawdown(qqq_df)
 
 tlt_price = round(float(tlt_df.iloc[0]["close"]), 2) if tlt_df is not None else None
 gld_price = round(float(gld_df.iloc[0]["close"]), 2) if gld_df is not None else None
-
-# VIX：Twelve Data 不一定支持，失败则显示“获取失败”
-vix = get_price("VIX")
 
 
 # -----------------------
@@ -174,6 +169,18 @@ if fg is not None:
         risk += 20
     else:
         risk += 70
+
+# VIX
+if vix is not None:
+    valid_items += 1
+    if vix < 18:
+        risk += 10
+    elif vix < 25:
+        risk += 30
+    elif vix < 35:
+        risk += 60
+    else:
+        risk += 90
 
 # SPY
 if spy_dd is not None:
@@ -196,18 +203,6 @@ if qqq_dd is not None:
         risk += 40
     elif qqq_dd > -20:
         risk += 70
-    else:
-        risk += 90
-
-# VIX
-if vix is not None:
-    valid_items += 1
-    if vix < 18:
-        risk += 10
-    elif vix < 25:
-        risk += 30
-    elif vix < 35:
-        risk += 60
     else:
         risk += 90
 
@@ -338,7 +333,7 @@ else:
 
 
 # -----------------------
-# 加仓计划
+# 美股回调加仓计划
 # -----------------------
 st.subheader("美股回调加仓计划")
 
