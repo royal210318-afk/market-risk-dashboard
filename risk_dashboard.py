@@ -1,9 +1,12 @@
-import streamlit as st
-import requests
-import pandas as pd
-import yfinance as yf
-import plotly.graph_objects as go
+import math
 from datetime import datetime
+
+import pandas as pd
+import plotly.graph_objects as go
+import requests
+import streamlit as st
+import yfinance as yf
+
 
 # =========================================================
 # 页面设置
@@ -21,90 +24,140 @@ except Exception:
 
 
 # =========================================================
-# 明亮白底样式
+# 明亮专业版样式
 # =========================================================
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 34%, #ffffff 100%);
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 32%),
+        radial-gradient(circle at top right, rgba(249, 115, 22, 0.10), transparent 30%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 35%, #ffffff 100%);
     color: #111827;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .block-container {
-    padding-top: 1.4rem;
+    padding-top: 1.2rem;
     padding-bottom: 3rem;
-    max-width: 1180px;
+    max-width: 1220px;
 }
 
-/* 顶部 Hero */
+/* 顶部 Hero 专业版 */
 .hero {
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 52%, #fff7ed 100%);
-    border: 1px solid #e5e7eb;
-    border-radius: 24px;
-    padding: 1.6rem 1.7rem;
-    margin: 0.4rem 0 1.6rem 0;
-    box-shadow: 0 12px 28px rgba(17, 24, 39, 0.07);
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 64, 175, 0.92) 52%, rgba(194, 65, 12, 0.90) 100%);
+    border: 1px solid rgba(255,255,255,0.26);
+    border-radius: 30px;
+    padding: 2.15rem 2.25rem;
+    margin: 0.3rem 0 1.8rem 0;
+    box-shadow: 0 22px 48px rgba(15, 23, 42, 0.20);
+}
+
+.hero:before {
+    content: "";
+    position: absolute;
+    width: 460px;
+    height: 460px;
+    right: -190px;
+    top: -230px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
 }
 
 .hero-top {
+    position: relative;
+    z-index: 2;
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
-    align-items: flex-start;
+    gap: 1.6rem;
+    align-items: stretch;
     flex-wrap: wrap;
 }
 
-.hero-title {
-    font-size: 2.15rem;
-    line-height: 1.15;
-    font-weight: 900;
-    color: #0f172a;
-    margin: 0;
-    letter-spacing: -0.9px;
-}
-
-.hero-subtitle {
-    font-size: 0.92rem;
-    color: #64748b;
-    margin-top: 0.55rem;
-    line-height: 1.65;
+.hero-left {
+    min-width: 520px;
+    flex: 1;
 }
 
 .hero-pill {
     display: inline-block;
-    background: #ffffff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: rgba(255,255,255,0.14);
+    color: #dbeafe;
+    border: 1px solid rgba(255,255,255,0.24);
     border-radius: 999px;
-    padding: 0.38rem 0.72rem;
-    font-size: 0.78rem;
+    padding: 0.42rem 0.82rem;
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.8rem;
+}
+
+.hero-title {
+    font-size: 3.15rem;
+    line-height: 1.05;
+    font-weight: 950;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -1.5px;
+}
+
+.hero-title-cn {
+    font-size: 1.48rem;
+    line-height: 1.35;
+    font-weight: 850;
+    color: #e0f2fe;
+    margin-top: 0.58rem;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    color: #dbeafe;
+    margin-top: 0.82rem;
+    line-height: 1.65;
+}
+
+.hero-cards {
+    min-width: 350px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+    align-content: stretch;
+}
+
+.hero-card {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    padding: 1.05rem 1.1rem;
+}
+
+.hero-card-label {
+    color: #dbeafe;
+    font-size: 0.82rem;
     font-weight: 800;
-    margin-bottom: 0.6rem;
 }
 
-.hero-status {
-    min-width: 220px;
-    background: rgba(255,255,255,0.78);
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 0.9rem 1rem;
+.hero-card-value {
+    color: #ffffff;
+    font-size: 1.65rem;
+    font-weight: 950;
+    margin-top: 0.35rem;
+    letter-spacing: -0.4px;
 }
 
-.hero-status-label {
-    color: #64748b;
-    font-size: 0.78rem;
-    font-weight: 750;
+.hero-card-wide {
+    grid-column: span 2;
 }
 
-.hero-status-value {
-    color: #111827;
-    font-size: 1.15rem;
-    font-weight: 900;
-    margin-top: 0.25rem;
+.hero-card-wide .hero-card-value {
+    font-size: 1.95rem;
 }
 
-/* Streamlit组件 */
+/* 页面组件 */
 h1, h2, h3 {
     color: #111827 !important;
     font-weight: 850 !important;
@@ -113,30 +166,30 @@ h1, h2, h3 {
 [data-testid="stMetric"] {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.05);
+    border-radius: 18px;
+    padding: 1.05rem 1.12rem;
+    box-shadow: 0 8px 22px rgba(17, 24, 39, 0.06);
 }
 
 [data-testid="stMetricLabel"] {
     color: #4b5563 !important;
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
+    font-size: 0.84rem !important;
+    font-weight: 750 !important;
 }
 
 [data-testid="stMetricValue"] {
     color: #111827 !important;
-    font-size: 1.7rem !important;
-    font-weight: 850 !important;
+    font-size: 1.78rem !important;
+    font-weight: 900 !important;
 }
 
 [data-testid="stMetricDelta"] {
-    font-size: 0.78rem !important;
-    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    font-weight: 750 !important;
 }
 
 .stAlert {
-    border-radius: 14px !important;
+    border-radius: 16px !important;
     border: 1px solid #bfdbfe !important;
     background: #eff6ff !important;
     color: #1e3a8a !important;
@@ -149,8 +202,8 @@ h1, h2, h3 {
 
 .stTabs [data-baseweb="tab"] {
     color: #374151 !important;
-    font-weight: 700 !important;
-    padding: 0.75rem 1rem !important;
+    font-weight: 750 !important;
+    padding: 0.78rem 1.05rem !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -160,7 +213,7 @@ h1, h2, h3 {
 
 .stDataFrame {
     border: 1px solid #e5e7eb !important;
-    border-radius: 14px !important;
+    border-radius: 16px !important;
     overflow: hidden;
 }
 
@@ -170,24 +223,32 @@ hr {
 }
 
 .big-action {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 1.1rem 1.2rem;
-    margin: 0.8rem 0 1rem 0;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+    border-left: 6px solid #2563eb;
+    border-radius: 20px;
+    padding: 1.25rem 1.35rem;
+    margin: 0.9rem 0 1rem 0;
+    box-shadow: 0 10px 26px rgba(37, 99, 235, 0.08);
 }
 
 .big-action-title {
-    font-size: 1.08rem;
-    font-weight: 850;
+    font-size: 1.2rem;
+    font-weight: 900;
     color: #111827;
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.55rem;
 }
 
 .big-action-body {
-    font-size: 0.96rem;
+    font-size: 1rem;
     color: #374151;
     line-height: 1.75;
+}
+
+.mini-note {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.65;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -225,12 +286,26 @@ THRESHOLD_COLOR = "#dc2626"
 # =========================================================
 @st.cache_data(ttl=600)
 def get_fear_greed_data():
-    """
-    获取 Fear & Greed 实时数据。
-    优先 CNN 官方接口；失败后尝试 MacroMicro 页面。
-    两个都失败时返回 None，不再用 50 冒充实时数据。
-    """
-    def parse_history_from_cnn(data):
+    """获取 CNN Fear & Greed 实时数据；失败返回 None，不用 50 冒充实时数据。"""
+    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://edition.cnn.com/markets/fear-and-greed",
+        }
+        r = requests.get(url, headers=headers, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+
+        fg_data = data.get("fear_and_greed", {})
+        score = fg_data.get("score")
+
+        if score is None:
+            return None, pd.DataFrame(columns=["date", "value"])
+
+        score = round(float(score), 1)
+
         rows = []
         historical = data.get("fear_and_greed_historical", {})
         hist_data = historical.get("data", []) if isinstance(historical, dict) else historical
@@ -241,13 +316,11 @@ def get_fear_greed_data():
                 y = item.get("y") or item.get("score") or item.get("value")
                 if x is None or y is None:
                     continue
-
                 try:
                     if isinstance(x, (int, float)):
                         dt = pd.to_datetime(x, unit="ms") if x > 10000000000 else pd.to_datetime(x, unit="s")
                     else:
                         dt = pd.to_datetime(x)
-
                     rows.append({"date": dt, "value": float(y)})
                 except Exception:
                     pass
@@ -256,102 +329,10 @@ def get_fear_greed_data():
         if not hist_df.empty:
             hist_df = hist_df.dropna().sort_values("date").tail(90)
 
-        return hist_df
-
-    # -----------------------
-    # 来源一：CNN 官方接口
-    # -----------------------
-    cnn_url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json,text/plain,*/*",
-            "Referer": "https://edition.cnn.com/markets/fear-and-greed",
-        }
-
-        r = requests.get(cnn_url, headers=headers, timeout=20)
-        r.raise_for_status()
-
-        data = r.json()
-        fg_data = data.get("fear_and_greed", {})
-        score = fg_data.get("score")
-
-        if score is not None:
-            score = round(float(score), 1)
-            hist_df = parse_history_from_cnn(data)
-            return score, hist_df
+        return score, hist_df
 
     except Exception:
-        pass
-
-    # -----------------------
-    # 来源二：MacroMicro 备用页面
-    # -----------------------
-    # 说明：
-    # MacroMicro 页面展示 CNN Fear & Greed 指数。
-    # 它不是 CNN 官方接口，可能略有延迟；
-    # 但作为备用源，比直接显示“50”更可靠。
-    macro_url = "https://sc.macromicro.me/series/22748/cnn-fear-and-greed"
-
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Referer": "https://sc.macromicro.me/",
-        }
-
-        r = requests.get(macro_url, headers=headers, timeout=20)
-        r.raise_for_status()
-
-        html = r.text
-
-        import re
-
-        candidates = []
-
-        # 优先在包含 fear / greed / CNN 附近找数值
-        patterns = [
-            r"Fear\s*&\s*Greed[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
-            r"CNN[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
-            r"恐惧[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
-            r"貪婪[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
-        ]
-
-        for pattern in patterns:
-            for m in re.finditer(pattern, html, flags=re.IGNORECASE):
-                try:
-                    value = float(m.group(1))
-                    if 0 <= value <= 100:
-                        candidates.append(value)
-                except Exception:
-                    pass
-
-        # 兜底：找页面里明显的 0-100 数值
-        # 为避免误取年份/编号，只取小范围数字，并优先靠近页面关键词的区域
-        if not candidates:
-            keywords = ["Fear", "Greed", "CNN", "恐惧", "貪婪", "贪婪"]
-            for kw in keywords:
-                pos = html.lower().find(kw.lower())
-                if pos >= 0:
-                    chunk = html[max(0, pos - 1000): pos + 3000]
-                    nums = re.findall(r"(?<![0-9])([0-9]{1,2}(?:\.[0-9]+)?|100(?:\.0+)?)(?![0-9])", chunk)
-                    for n in nums:
-                        try:
-                            value = float(n)
-                            if 0 <= value <= 100:
-                                candidates.append(value)
-                        except Exception:
-                            pass
-
-        if candidates:
-            score = round(float(candidates[0]), 1)
-            return score, pd.DataFrame(columns=["date", "value"])
-
-    except Exception:
-        pass
-
-    return None, pd.DataFrame(columns=["date", "value"])
+        return None, pd.DataFrame(columns=["date", "value"])
 
 
 @st.cache_data(ttl=1800)
@@ -373,7 +354,6 @@ def get_yf_history(symbol, period="6mo"):
 
 @st.cache_data(ttl=1800)
 def get_twelve_history(symbol):
-    """Twelve Data 优先，失败自动转 Yahoo。"""
     if not API_KEY:
         return get_yf_history(symbol, period="1y")
 
@@ -385,7 +365,6 @@ def get_twelve_history(symbol):
     try:
         r = requests.get(url, timeout=30)
         data = r.json()
-
         if data.get("status") != "ok":
             return get_yf_history(symbol, period="1y")
 
@@ -394,7 +373,6 @@ def get_twelve_history(symbol):
         df["close"] = df["close"].astype(float)
         df["high"] = df["high"].astype(float)
         return df[["date", "close", "high"]].sort_values("date")
-
     except Exception:
         return get_yf_history(symbol, period="1y")
 
@@ -404,10 +382,25 @@ def get_vix_data():
     df = get_yf_history("^VIX", period="6mo")
     if df is None or df.empty:
         return None, pd.DataFrame(columns=["date", "value"])
-
     out = df[["date", "close"]].rename(columns={"close": "value"}).tail(120)
     latest = round(float(out.iloc[-1]["value"]), 2)
     return latest, out
+
+
+@st.cache_data(ttl=86400)
+def get_history_range(symbol, start, end):
+    try:
+        hist = yf.Ticker(symbol).history(start=start, end=end)
+        if hist is None or hist.empty:
+            return None
+        hist = hist.reset_index()
+        date_col = "Date" if "Date" in hist.columns else hist.columns[0]
+        hist["date"] = pd.to_datetime(hist[date_col]).dt.tz_localize(None)
+        hist["close"] = hist["Close"].astype(float)
+        hist["high"] = hist["High"].astype(float)
+        return hist[["date", "close", "high"]].sort_values("date")
+    except Exception:
+        return None
 
 
 # =========================================================
@@ -448,14 +441,11 @@ def make_return_series(df, days=60):
 def make_relative_series(df_a, df_b, days=60):
     if df_a is None or df_b is None or df_a.empty or df_b.empty:
         return pd.DataFrame(columns=["date", "value"])
-
     a = df_a[["date", "close"]].rename(columns={"close": "a_close"})
     b = df_b[["date", "close"]].rename(columns={"close": "b_close"})
     merged = pd.merge(a, b, on="date", how="inner").sort_values("date")
-
     if len(merged) < days:
         return pd.DataFrame(columns=["date", "value"])
-
     merged = merged.tail(days)
     a_start = float(merged.iloc[0]["a_close"])
     b_start = float(merged.iloc[0]["b_close"])
@@ -487,6 +477,33 @@ def series_change(df, days=20):
     if df is None or df.empty or len(df) < days:
         return None
     return round(float(df.iloc[-1]["value"]) - float(df.iloc[-days]["value"]), 2)
+
+
+def up_to_date(df, d):
+    if df is None or df.empty:
+        return None
+    x = df[df["date"] <= pd.Timestamp(d)]
+    return x if not x.empty else None
+
+
+def value_on_or_after(df, d):
+    if df is None or df.empty:
+        return None
+    x = df[df["date"] >= pd.Timestamp(d)]
+    if x.empty:
+        return None
+    return float(x.iloc[0]["close"])
+
+
+def future_return(df, d, days):
+    base_df = up_to_date(df, d)
+    if base_df is None or base_df.empty:
+        return None
+    base = float(base_df.iloc[-1]["close"])
+    future = value_on_or_after(df, pd.Timestamp(d) + pd.Timedelta(days=days))
+    if base == 0 or future is None:
+        return None
+    return round((future - base) / base * 100, 2)
 
 
 # =========================================================
@@ -644,10 +661,6 @@ def average_score(values):
 
 
 def weighted_risk_score(emotion, trend, breadth, credit, cross_asset):
-    """
-    五层风险模型：
-    情绪 30% + 趋势 20% + 广度 20% + 信用 20% + 跨资产 10%
-    """
     return round(
         emotion * 0.30
         + trend * 0.20
@@ -670,19 +683,8 @@ def risk_level(score):
 def decide_action(risk_score, fg, vix, hyg_change, jnk_change, rsp_vs_spy, iwm_vs_spy):
     """
     操作动作只保留六类：
-    1. 避免追高
-    2. 暂停抄底
-    3. 正常定投
-    4. 加仓30%
-    5. 再加仓30%
-    6. 加仓剩余40%
-
-    资金比例严格按照你的三档规则：
-    20~40：30%
-    40~60：再30%
-    60以上：剩余40%
+    避免追高、暂停抄底、正常定投、加仓30%、再加仓30%、加仓剩余40%。
     """
-
     credit_warning = (
         (hyg_change is not None and hyg_change < -5)
         or (jnk_change is not None and jnk_change < -5)
@@ -741,6 +743,26 @@ def decide_action(risk_score, fg, vix, hyg_change, jnk_change, rsp_vs_spy, iwm_v
         "第三档加仓：投入剩余40%",
         "市场进入第三档回调区间。若 HYG/JNK 没有明显崩盘，建议投入剩余40%。累计投入100%，剩余现金0%。"
     )
+
+
+def opportunity_stars(risk_score, vix, hyg_change, jnk_change):
+    credit_bad = (
+        (hyg_change is not None and hyg_change < -5)
+        or (jnk_change is not None and jnk_change < -5)
+    )
+
+    if credit_bad:
+        return "★★☆☆☆"
+
+    if risk_score >= 75 and vix is not None and vix >= 30:
+        return "★★★★★"
+    elif risk_score >= 60:
+        return "★★★★☆"
+    elif risk_score >= 40:
+        return "★★★☆☆"
+    elif risk_score >= 20:
+        return "★★☆☆☆"
+    return "★☆☆☆☆"
 
 
 # =========================================================
@@ -832,11 +854,6 @@ def show_chart_summary(current, low, high, recent_change, status, unit="%"):
 # =========================================================
 fg_auto, fg_hist_df = get_fear_greed_data()
 
-# -----------------------
-# Fear & Greed 手动输入
-# -----------------------
-# CNN / MacroMicro 在云端可能抓取失败。
-# 这里允许你点击链接查看数值后，手动输入，系统会用手动值参与测算。
 with st.sidebar:
     st.markdown("### Fear & Greed")
     st.markdown("[打开 CNN Fear & Greed](https://edition.cnn.com/markets/fear-and-greed)")
@@ -906,21 +923,193 @@ buy_grade, scene, action_title, advice = decide_action(
 
 
 # =========================================================
+# 历史评分/排行榜/相似度
+# =========================================================
+def score_one_day(target_date, dfs):
+    h_spy_q = up_to_date(dfs["SPY"], target_date)
+    h_qqq_q = up_to_date(dfs["QQQ"], target_date)
+    h_rsp_q = up_to_date(dfs["RSP"], target_date)
+    h_iwm_q = up_to_date(dfs["IWM"], target_date)
+    h_hyg_q = up_to_date(dfs["HYG"], target_date)
+    h_jnk_q = up_to_date(dfs["JNK"], target_date)
+    h_tlt_q = up_to_date(dfs["TLT"], target_date)
+    h_gld_q = up_to_date(dfs["GLD"], target_date)
+    h_vix_q = up_to_date(dfs["^VIX"], target_date)
+
+    q_vix = latest_price(h_vix_q)
+
+    _, q_spy_dd = calc_drawdown(h_spy_q)
+    _, q_qqq_dd = calc_drawdown(h_qqq_q)
+
+    q_spy_change = calc_change(h_spy_q, 60)
+    q_rsp_change = calc_change(h_rsp_q, 60)
+    q_iwm_change = calc_change(h_iwm_q, 60)
+    q_hyg_change = calc_change(h_hyg_q, 60)
+    q_jnk_change = calc_change(h_jnk_q, 60)
+    q_tlt_change = calc_change(h_tlt_q, 60)
+    q_gld_change = calc_change(h_gld_q, 60)
+
+    q_rsp_vs_spy = round(q_rsp_change - q_spy_change, 2) if q_rsp_change is not None and q_spy_change is not None else None
+    q_iwm_vs_spy = round(q_iwm_change - q_spy_change, 2) if q_iwm_change is not None and q_spy_change is not None else None
+
+    q_emotion = average_score([score_vix(q_vix)])
+    q_trend = average_score([score_drawdown(q_spy_dd), score_drawdown(q_qqq_dd)])
+    q_breadth = average_score([score_relative(q_rsp_vs_spy), score_relative(q_iwm_vs_spy)])
+    q_credit = average_score([score_credit(q_hyg_change), score_credit(q_jnk_change)])
+    q_cross = average_score([score_cross_asset(q_tlt_change, q_gld_change)])
+    q_risk = weighted_risk_score(q_emotion, q_trend, q_breadth, q_credit, q_cross)
+
+    q_grade, q_scene, q_action_title, q_action = decide_action(
+        q_risk, None, q_vix, q_hyg_change, q_jnk_change, q_rsp_vs_spy, q_iwm_vs_spy
+    )
+
+    spy_30 = future_return(dfs["SPY"], target_date, 30)
+    spy_60 = future_return(dfs["SPY"], target_date, 60)
+    spy_120 = future_return(dfs["SPY"], target_date, 120)
+
+    qqq_30 = future_return(dfs["QQQ"], target_date, 30)
+    qqq_60 = future_return(dfs["QQQ"], target_date, 60)
+    qqq_120 = future_return(dfs["QQQ"], target_date, 120)
+
+    return {
+        "日期": pd.Timestamp(target_date).strftime("%Y-%m-%d"),
+        "风险评分": q_risk,
+        "操作动作": q_grade,
+        "市场状态": q_scene,
+        "机会质量": opportunity_stars(q_risk, q_vix, q_hyg_change, q_jnk_change),
+        "SPY回撤": q_spy_dd,
+        "QQQ回撤": q_qqq_dd,
+        "VIX": q_vix,
+        "RSP相对SPY": q_rsp_vs_spy,
+        "IWM相对SPY": q_iwm_vs_spy,
+        "HYG近60日": q_hyg_change,
+        "JNK近60日": q_jnk_change,
+        "SPY30天后": spy_30,
+        "SPY60天后": spy_60,
+        "SPY120天后": spy_120,
+        "QQQ30天后": qqq_30,
+        "QQQ60天后": qqq_60,
+        "QQQ120天后": qqq_120,
+    }
+
+
+@st.cache_data(ttl=86400)
+def build_history_table(start_date, end_date):
+    start_ts = pd.Timestamp(start_date)
+    end_ts = pd.Timestamp(end_date)
+    fetch_start = (start_ts - pd.Timedelta(days=430)).strftime("%Y-%m-%d")
+    fetch_end = min(pd.Timestamp.today(), end_ts + pd.Timedelta(days=150)).strftime("%Y-%m-%d")
+
+    symbols = ["SPY", "QQQ", "RSP", "IWM", "HYG", "JNK", "TLT", "GLD", "^VIX"]
+    dfs = {s: get_history_range(s, fetch_start, fetch_end) for s in symbols}
+
+    if dfs["SPY"] is None or dfs["SPY"].empty:
+        return pd.DataFrame()
+
+    trading_days = dfs["SPY"][
+        (dfs["SPY"]["date"] >= start_ts) &
+        (dfs["SPY"]["date"] <= end_ts)
+    ]["date"].tolist()
+
+    rows = []
+    for d in trading_days:
+        try:
+            rows.append(score_one_day(d, dfs))
+        except Exception:
+            continue
+
+    if not rows:
+        return pd.DataFrame()
+
+    return pd.DataFrame(rows)
+
+
+def format_percent_value(x):
+    if x is None or pd.isna(x):
+        return "N/A"
+    return f"{round(float(x), 2)}%"
+
+
+def add_similarity_columns(df):
+    if df is None or df.empty:
+        return df
+
+    current_vector = {
+        "风险评分": risk_score,
+        "VIX": vix,
+        "SPY回撤": spy_dd,
+        "QQQ回撤": qqq_dd,
+        "RSP相对SPY": rsp_vs_spy,
+        "IWM相对SPY": iwm_vs_spy,
+        "HYG近60日": hyg_change,
+        "JNK近60日": jnk_change,
+    }
+
+    # 每个指标的大致尺度，避免 VIX 和回撤的单位影响过大
+    scales = {
+        "风险评分": 100,
+        "VIX": 40,
+        "SPY回撤": 30,
+        "QQQ回撤": 40,
+        "RSP相对SPY": 20,
+        "IWM相对SPY": 25,
+        "HYG近60日": 10,
+        "JNK近60日": 10,
+    }
+
+    similarities = []
+
+    for _, row in df.iterrows():
+        dist_sq = 0
+        count = 0
+
+        for k, scale in scales.items():
+            cur = current_vector.get(k)
+            hist = row.get(k)
+
+            if cur is None or pd.isna(cur) or hist is None or pd.isna(hist):
+                continue
+
+            dist_sq += ((float(cur) - float(hist)) / scale) ** 2
+            count += 1
+
+        if count == 0:
+            similarities.append(None)
+        else:
+            dist = math.sqrt(dist_sq / count)
+            similarity = max(0, min(100, round((1 - dist) * 100, 1)))
+            similarities.append(similarity)
+
+    out = df.copy()
+    out["与今日相似度"] = similarities
+    return out
+
+
+# =========================================================
 # 页头
 # =========================================================
 st.markdown(f"""
 <div class="hero">
   <div class="hero-top">
-    <div>
+    <div class="hero-left">
       <span class="hero-pill">Market Risk Dashboard</span>
       <p class="hero-title">📈 市场风险仪表盘</p>
-      <p class="hero-subtitle">美股回调加仓版 · 情绪 30% · 趋势 20% · 广度 20% · 信用 20% · 跨资产 10%</p>
+      <div class="hero-title-cn">美股回调加仓决策系统</div>
+      <p class="hero-subtitle">情绪 30% · 趋势 20% · 广度 20% · 信用 20% · 跨资产 10%</p>
     </div>
-    <div class="hero-status">
-      <div class="hero-status-label">当前操作</div>
-      <div class="hero-status-value">{buy_grade}</div>
-      <div class="hero-status-label" style="margin-top:0.45rem;">综合风险</div>
-      <div class="hero-status-value">{risk_score}/100</div>
+    <div class="hero-cards">
+      <div class="hero-card hero-card-wide">
+        <div class="hero-card-label">当前操作</div>
+        <div class="hero-card-value">{buy_grade}</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-label">综合风险</div>
+        <div class="hero-card-value">{risk_score}/100</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-label">市场状态</div>
+        <div class="hero-card-value" style="font-size:1.35rem;">{scene}</div>
+      </div>
     </div>
   </div>
 </div>
@@ -969,7 +1158,7 @@ with main_tab:
     c9.metric("跨资产状态", cross_asset_status(tlt_change, gld_change))
 
     if fg is None:
-        st.warning("Fear & Greed 自动获取失败。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
+        st.warning("Fear & Greed 未获取到实时数据。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
     else:
         st.caption(f"Fear & Greed 数据来源：{fg_source}")
 
@@ -1052,7 +1241,6 @@ with main_tab:
                 {"y": -5, "text": "-5：广度明显偏弱"},
             ],
         )
-        st.caption("蓝线代表 RSP 近60日涨跌幅减去 SPY 近60日涨跌幅，不是 RSP 或 SPY 的价格线。")
 
     with tab4:
         st.markdown("### IWM 相对 SPY")
@@ -1073,7 +1261,6 @@ with main_tab:
                 {"y": -5, "text": "-5：小盘明显跑输"},
             ],
         )
-        st.caption("蓝线代表 IWM 近60日涨跌幅减去 SPY 近60日涨跌幅；高于0说明小盘股跑赢大盘。")
 
     with tab5:
         st.markdown("### HYG 近60日")
@@ -1117,11 +1304,113 @@ with main_tab:
 
 
 # =========================================================
-# 历史回测
+# 历史回测 + 排行榜 + 相似度
 # =========================================================
 with backtest_tab:
     st.subheader("历史回测")
-    st.caption("选择历史交易日，查看该日风险评分与加仓动作。历史 Fear & Greed 免费接口无法稳定还原，因此历史情绪层主要使用 VIX。")
+    st.caption("历史 Fear & Greed 免费接口无法稳定还原，因此历史模型主要使用 VIX、回撤、广度、信用和跨资产数据。")
+
+    st.markdown("### 历史最佳加仓窗口排行榜")
+
+    lb_col1, lb_col2, lb_col3 = st.columns([1, 1, 1])
+    with lb_col1:
+        lb_start = st.date_input("排行榜开始日期", value=pd.Timestamp("2026-02-01"), key="lb_start")
+    with lb_col2:
+        lb_end = st.date_input("排行榜结束日期", value=pd.Timestamp.today() - pd.Timedelta(days=1), key="lb_end")
+    with lb_col3:
+        top_n = st.number_input("显示前几名", min_value=5, max_value=50, value=10, step=5)
+
+    if st.button("生成排行榜 + 相似度 + 后验收益"):
+        with st.spinner("正在生成历史经验库，时间跨度越长等待越久…"):
+            hist_table = build_history_table(lb_start, lb_end)
+
+            if hist_table.empty:
+                st.warning("没有生成有效结果，请换一个日期区间再试。")
+            else:
+                sim_table = add_similarity_columns(hist_table)
+
+                leaderboard = sim_table.sort_values(["风险评分", "日期"], ascending=[False, True]).reset_index(drop=True)
+                leaderboard.insert(0, "排名", range(1, len(leaderboard) + 1))
+
+                similar = sim_table.dropna(subset=["与今日相似度"]).sort_values(
+                    ["与今日相似度", "风险评分"],
+                    ascending=[False, False]
+                ).reset_index(drop=True)
+                similar.insert(0, "排名", range(1, len(similar) + 1))
+
+                display_cols = [
+                    "排名", "日期", "机会质量", "风险评分", "操作动作",
+                    "SPY回撤", "QQQ回撤", "VIX",
+                    "HYG近60日", "JNK近60日",
+                    "SPY30天后", "SPY60天后", "SPY120天后",
+                    "QQQ30天后", "QQQ60天后", "QQQ120天后"
+                ]
+
+                show_leaderboard = leaderboard[display_cols].head(int(top_n)).copy()
+
+                percent_cols = [
+                    "SPY回撤", "QQQ回撤", "HYG近60日", "JNK近60日",
+                    "SPY30天后", "SPY60天后", "SPY120天后",
+                    "QQQ30天后", "QQQ60天后", "QQQ120天后"
+                ]
+                for col in percent_cols:
+                    show_leaderboard[col] = show_leaderboard[col].apply(format_percent_value)
+
+                st.markdown("#### A. 历史最佳加仓窗口排行榜")
+                st.dataframe(show_leaderboard, use_container_width=True, hide_index=True)
+
+                best = leaderboard.iloc[0]
+                st.info(
+                    f"区间内模型评分最高的日期是 {best['日期']}，"
+                    f"风险评分 {best['风险评分']}/100，"
+                    f"操作动作：{best['操作动作']}，"
+                    f"SPY回撤：{format_percent_value(best['SPY回撤'])}，"
+                    f"QQQ回撤：{format_percent_value(best['QQQ回撤'])}。"
+                )
+
+                st.markdown("#### B. 今日与历史机会最相似案例")
+
+                sim_cols = [
+                    "排名", "日期", "与今日相似度", "机会质量", "风险评分", "操作动作",
+                    "SPY回撤", "QQQ回撤", "VIX",
+                    "HYG近60日", "JNK近60日",
+                    "SPY30天后", "SPY60天后", "SPY120天后",
+                    "QQQ30天后", "QQQ60天后", "QQQ120天后"
+                ]
+
+                show_similar = similar[sim_cols].head(int(top_n)).copy()
+                for col in percent_cols:
+                    show_similar[col] = show_similar[col].apply(format_percent_value)
+
+                show_similar["与今日相似度"] = show_similar["与今日相似度"].apply(
+                    lambda x: f"{x}%" if pd.notna(x) else "N/A"
+                )
+
+                st.dataframe(show_similar, use_container_width=True, hide_index=True)
+
+                top3 = similar.head(3)
+                valid_spy_60 = [x for x in top3["SPY60天后"].tolist() if x is not None and not pd.isna(x)]
+                valid_qqq_60 = [x for x in top3["QQQ60天后"].tolist() if x is not None and not pd.isna(x)]
+
+                if not top3.empty:
+                    best_sim = top3.iloc[0]
+                    summary = (
+                        f"与今天最相似的历史日期是 {best_sim['日期']}，"
+                        f"相似度 {best_sim['与今日相似度']}%，"
+                        f"当日风险评分 {best_sim['风险评分']}/100，"
+                        f"操作动作：{best_sim['操作动作']}。"
+                    )
+
+                    if valid_spy_60:
+                        summary += f" 最相似前三个案例的 SPY 60天后平均收益约 {round(sum(valid_spy_60)/len(valid_spy_60), 2)}%。"
+
+                    if valid_qqq_60:
+                        summary += f" QQQ 60天后平均收益约 {round(sum(valid_qqq_60)/len(valid_qqq_60), 2)}%。"
+
+                    st.info(summary)
+
+    st.markdown("---")
+    st.markdown("### 单日回测")
 
     query_date = st.date_input(
         "选择查询日期",
@@ -1131,107 +1420,33 @@ with backtest_tab:
         format="YYYY/MM/DD",
     )
 
-    @st.cache_data(ttl=86400)
-    def get_history_range(symbol, start, end):
-        try:
-            hist = yf.Ticker(symbol).history(start=start, end=end)
-            if hist is None or hist.empty:
-                return None
-            hist = hist.reset_index()
-            date_col = "Date" if "Date" in hist.columns else hist.columns[0]
-            hist["date"] = pd.to_datetime(hist[date_col]).dt.tz_localize(None)
-            hist["close"] = hist["Close"].astype(float)
-            hist["high"] = hist["High"].astype(float)
-            return hist[["date", "close", "high"]].sort_values("date")
-        except Exception:
-            return None
-
-    if st.button("开始回测"):
+    if st.button("开始单日回测"):
         with st.spinner("正在计算历史数据…"):
             end = (pd.Timestamp(query_date) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
             start = (pd.Timestamp(query_date) - pd.Timedelta(days=430)).strftime("%Y-%m-%d")
 
-            h_spy = get_history_range("SPY", start, end)
-            h_qqq = get_history_range("QQQ", start, end)
-            h_rsp = get_history_range("RSP", start, end)
-            h_iwm = get_history_range("IWM", start, end)
-            h_hyg = get_history_range("HYG", start, end)
-            h_jnk = get_history_range("JNK", start, end)
-            h_tlt = get_history_range("TLT", start, end)
-            h_gld = get_history_range("GLD", start, end)
-            h_vix = get_history_range("^VIX", start, end)
+            symbols = ["SPY", "QQQ", "RSP", "IWM", "HYG", "JNK", "TLT", "GLD", "^VIX"]
+            dfs = {s: get_history_range(s, start, end) for s in symbols}
 
-            def up_to(df, d):
-                if df is None or df.empty:
-                    return None
-                x = df[df["date"] <= pd.Timestamp(d)]
-                return x if not x.empty else None
-
-            h_spy_q = up_to(h_spy, query_date)
-            h_qqq_q = up_to(h_qqq, query_date)
-            h_rsp_q = up_to(h_rsp, query_date)
-            h_iwm_q = up_to(h_iwm, query_date)
-            h_hyg_q = up_to(h_hyg, query_date)
-            h_jnk_q = up_to(h_jnk, query_date)
-            h_tlt_q = up_to(h_tlt, query_date)
-            h_gld_q = up_to(h_gld, query_date)
-            h_vix_q = up_to(h_vix, query_date)
-
-            q_vix = latest_price(h_vix_q)
-            _, q_spy_dd = calc_drawdown(h_spy_q)
-            _, q_qqq_dd = calc_drawdown(h_qqq_q)
-
-            q_spy_change = calc_change(h_spy_q, 60)
-            q_rsp_change = calc_change(h_rsp_q, 60)
-            q_iwm_change = calc_change(h_iwm_q, 60)
-            q_hyg_change = calc_change(h_hyg_q, 60)
-            q_jnk_change = calc_change(h_jnk_q, 60)
-            q_tlt_change = calc_change(h_tlt_q, 60)
-            q_gld_change = calc_change(h_gld_q, 60)
-
-            q_rsp_vs_spy = round(q_rsp_change - q_spy_change, 2) if q_rsp_change is not None and q_spy_change is not None else None
-            q_iwm_vs_spy = round(q_iwm_change - q_spy_change, 2) if q_iwm_change is not None and q_spy_change is not None else None
-
-            q_emotion = average_score([score_vix(q_vix)])
-            q_trend = average_score([score_drawdown(q_spy_dd), score_drawdown(q_qqq_dd)])
-            q_breadth = average_score([score_relative(q_rsp_vs_spy), score_relative(q_iwm_vs_spy)])
-            q_credit = average_score([score_credit(q_hyg_change), score_credit(q_jnk_change)])
-            q_cross = average_score([score_cross_asset(q_tlt_change, q_gld_change)])
-            q_risk = weighted_risk_score(q_emotion, q_trend, q_breadth, q_credit, q_cross)
-
-            q_grade, q_scene, q_action_title, q_action = decide_action(
-                q_risk, None, q_vix, q_hyg_change, q_jnk_change, q_rsp_vs_spy, q_iwm_vs_spy
-            )
+            row = score_one_day(query_date, dfs)
 
             st.markdown("### 回测结果")
-
             r1, r2, r3 = st.columns(3)
-            r1.metric("市场状态", q_scene)
-            r2.metric("操作动作", q_grade)
-            r3.metric("综合风险评分", f"{q_risk}/100", risk_level(q_risk))
-
-            st.info(q_action)
+            r1.metric("市场状态", row["市场状态"])
+            r2.metric("操作动作", row["操作动作"])
+            r3.metric("综合风险评分", f"{row['风险评分']}/100", risk_level(row["风险评分"]))
 
             rr = pd.DataFrame({
-                "指标": ["VIX", "SPY回调", "QQQ回调", "RSP相对SPY", "IWM相对SPY", "HYG近60日", "JNK近60日"],
+                "指标": ["VIX", "SPY回撤", "QQQ回撤", "RSP相对SPY", "IWM相对SPY", "HYG近60日", "JNK近60日"],
                 "数值": [
-                    q_vix,
-                    f"{q_spy_dd}%" if q_spy_dd is not None else "N/A",
-                    f"{q_qqq_dd}%" if q_qqq_dd is not None else "N/A",
-                    f"{q_rsp_vs_spy}%" if q_rsp_vs_spy is not None else "N/A",
-                    f"{q_iwm_vs_spy}%" if q_iwm_vs_spy is not None else "N/A",
-                    f"{q_hyg_change}%" if q_hyg_change is not None else "N/A",
-                    f"{q_jnk_change}%" if q_jnk_change is not None else "N/A",
+                    row["VIX"],
+                    format_percent_value(row["SPY回撤"]),
+                    format_percent_value(row["QQQ回撤"]),
+                    format_percent_value(row["RSP相对SPY"]),
+                    format_percent_value(row["IWM相对SPY"]),
+                    format_percent_value(row["HYG近60日"]),
+                    format_percent_value(row["JNK近60日"]),
                 ],
-                "状态": [
-                    vix_status(q_vix),
-                    drawdown_status(q_spy_dd),
-                    drawdown_status(q_qqq_dd),
-                    relative_status(q_rsp_vs_spy),
-                    relative_status(q_iwm_vs_spy),
-                    credit_status(q_hyg_change),
-                    credit_status(q_jnk_change),
-                ]
             })
             st.dataframe(rr, use_container_width=True, hide_index=True)
 
