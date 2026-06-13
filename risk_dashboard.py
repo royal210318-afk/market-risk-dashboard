@@ -565,15 +565,18 @@ def credit_status(change):
     return "信用稳定"
 
 
-def get_status_description(status):
-    descriptions = {
-        "跨资产中性": "当前无宏观压力，无需额外操作。",
-        "通胀或货币信用压力": "资金流向黄金避险，对高估值股票不利，建议减仓。",
-        "避险或衰退担忧": "市场恐慌情绪明显，建议降低仓位，提高现金流。",
-        "利率压力偏大": "利率快速上行，科技股压力大，请检查仓位配比。",
-        "利率压力缓和": "融资环境改善，对成长股有利，可择机加仓。"
-    }
-    return descriptions.get(status, "状态异常，请检查数据。")
+def cross_asset_status(tlt_change, gld_change):
+    if tlt_change is None or gld_change is None:
+        return "获取失败"
+    if gld_change > 5 and tlt_change < -3:
+        return "通胀或货币信用压力"
+    elif gld_change > 5 and tlt_change > 3:
+        return "避险或衰退担忧"
+    elif tlt_change < -5:
+        return "利率压力偏大"
+    elif tlt_change > 5:
+        return "利率压力缓和"
+    return "跨资产中性"
 
 
 def score_fear(fg):
@@ -1150,8 +1153,6 @@ with main_tab:
     c8.metric("JNK 近60日", f"{jnk_change}%" if jnk_change is not None else "获取失败", credit_status(jnk_change))
     c9.metric("跨资产状态", cross_asset_status(tlt_change, gld_change))
 
-    status_now = cross_asset_status(tlt_change, gld_change)
-    st.caption(f"💡 策略提示：{get_status_description(status_now)}")
     if fg is None:
         st.warning("Fear & Greed 未获取到实时数据。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
     else:
