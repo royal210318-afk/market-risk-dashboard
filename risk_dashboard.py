@@ -784,7 +784,38 @@ def show_chart_summary(current, low, high, recent_change, status, unit="%"):
 # =========================================================
 # 当前数据
 # =========================================================
-fg, fg_hist_df = get_fear_greed_data()
+fg_auto, fg_hist_df = get_fear_greed_data()
+
+# -----------------------
+# Fear & Greed 手动输入
+# -----------------------
+# CNN / MacroMicro 在云端可能抓取失败。
+# 这里允许你点击链接查看数值后，手动输入，系统会用手动值参与测算。
+with st.sidebar:
+    st.markdown("### Fear & Greed")
+    st.markdown("[打开 CNN Fear & Greed](https://edition.cnn.com/markets/fear-and-greed)")
+    st.markdown("[打开 MacroMicro 备用页](https://sc.macromicro.me/series/22748/cnn-fear-and-greed)")
+
+    use_manual_fg = st.checkbox(
+        "手动输入 Fear & Greed",
+        value=(fg_auto is None)
+    )
+
+    manual_fg = st.number_input(
+        "Fear & Greed 数值",
+        min_value=0.0,
+        max_value=100.0,
+        value=50.0 if fg_auto is None else float(fg_auto),
+        step=1.0
+    )
+
+if use_manual_fg:
+    fg = round(float(manual_fg), 1)
+    fg_source = "手动输入"
+else:
+    fg = fg_auto
+    fg_source = "自动获取" if fg_auto is not None else "获取失败"
+
 vix, vix_hist_df = get_vix_data()
 
 spy_df = get_twelve_history("SPY")
@@ -892,7 +923,9 @@ with main_tab:
     c9.metric("跨资产状态", cross_asset_status(tlt_change, gld_change))
 
     if fg is None:
-        st.warning("Fear & Greed 未获取到实时数据。请稍后刷新，或在 Streamlit Cloud 中 Clear cache 后重试。")
+        st.warning("Fear & Greed 自动获取失败。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
+    else:
+        st.caption(f"Fear & Greed 数据来源：{fg_source}")
 
     st.markdown("---")
     st.subheader("三、五层风险来源拆解")
