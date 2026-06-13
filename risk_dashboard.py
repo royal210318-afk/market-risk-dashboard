@@ -1,9 +1,9 @@
-
 import streamlit as st
 import requests
 import pandas as pd
 import yfinance as yf
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(
@@ -12,24 +12,17 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------
-# 密钥
-# -----------------------
 try:
     API_KEY = st.secrets["TWELVE_API_KEY"]
 except Exception:
     API_KEY = ""
 
-
-# -----------------------
-# 页面标题
-# -----------------------
-st.title("📈 市场风险仪表盘 V7")
+st.title("📈 市场风险仪表盘")
 st.caption("美股回调加仓版 · 情绪 · 波动率 · 市场广度 · 信用风险 · 跨资产联动")
 
 
 # -----------------------
-# Fear & Greed 当前值 + 历史图表
+# Fear & Greed
 # -----------------------
 @st.cache_data(ttl=1800)
 def get_fear_greed_data():
@@ -41,7 +34,6 @@ def get_fear_greed_data():
         score = float(data["fear_and_greed"]["score"])
 
         rows = []
-
         historical = data.get("fear_and_greed_historical", {})
 
         if isinstance(historical, dict):
@@ -73,6 +65,7 @@ def get_fear_greed_data():
                         "value": float(y)
                     }
                 )
+
             except Exception:
                 continue
 
@@ -90,7 +83,7 @@ def get_fear_greed_data():
 
 
 # -----------------------
-# VIX 当前值 + 历史图表
+# VIX
 # -----------------------
 @st.cache_data(ttl=1800)
 def get_vix_data():
@@ -114,7 +107,7 @@ def get_vix_data():
 
 
 # -----------------------
-# Twelve Data 历史数据
+# Twelve Data
 # -----------------------
 @st.cache_data(ttl=1800)
 def get_history(symbol):
@@ -140,7 +133,6 @@ def get_history(symbol):
         df["date"] = pd.to_datetime(df["datetime"])
         df["close"] = df["close"].astype(float)
         df["high"] = df["high"].astype(float)
-
         df = df.sort_values("date")
 
         return df[["date", "close", "high"]]
@@ -155,7 +147,6 @@ def get_history(symbol):
 def latest_price(df):
     if df is None or df.empty:
         return None
-
     return round(float(df.iloc[-1]["close"]), 2)
 
 
@@ -182,12 +173,33 @@ def calc_change(df, days=60):
     return round(change, 2)
 
 
+def calc_recent_change_from_series(df, days=20):
+    if df is None or df.empty or len(df) < days:
+        return None
+
+    latest = float(df.iloc[-1]["value"])
+    past = float(df.iloc[-days]["value"])
+
+    return round(latest - past, 2)
+
+
+def calc_min_from_series(df):
+    if df is None or df.empty:
+        return None
+    return round(float(df["value"].min()), 2)
+
+
+def calc_max_from_series(df):
+    if df is None or df.empty:
+        return None
+    return round(float(df["value"].max()), 2)
+
+
 def make_return_series(df, days=60):
     if df is None or df.empty or len(df) < days:
         return pd.DataFrame(columns=["date", "value"])
 
     temp = df.tail(days).copy()
-
     start_price = float(temp.iloc[0]["close"])
 
     if start_price == 0:
@@ -431,7 +443,7 @@ def show_line_chart(df, title, y_title, threshold_lines=None):
     )
 
     fig.update_layout(
-        height=340,
+        height=360,
         margin=dict(l=20, r=20, t=60, b=20),
         hovermode="x unified"
     )
@@ -446,6 +458,63 @@ def show_line_chart(df, title, y_title, threshold_lines=None):
             )
 
     st.plotly_chart(fig, use_container_width=True)
+
+
+def show_fear_greed_gauge(fg):
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=fg,
+            title={"text": "Fear & Greed"},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#1f77b4"},
+                "steps": [
+                    {"range": [0, 25], "color": "#f8d7da"},
+                    {"range": [25, 45], "color": "#fff3cd"},
+                    {"range": [45, 75], "color": "#d1ecf1"},
+                    {"range": [75, 100], "color": "#d4edda"},
+                ],
+                "threshold": {
+                    "line": {"color": "red", "width": 4},
+                    "thickness": 0.75,
+                    "value": fg,
+                },
+            },
+        )
+    )
+
+    fig.update_layout(
+        height=330,
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_chart_summary(title, current, low, high, recent_change, status):
+    a, b, c, d = st.columns(4)
+
+    a.metric(
+        "当前值",
+        current if current is not None else "获取失败"
+    )
+
+    b.metric(
+        "区间低点",
+        low if low is not None else "获取失败"
+    )
+
+    c.metric(
+        "区间高点",
+        high if high is not None else "获取失败"
+    )
+
+    d.metric(
+        "近20日变化",
+        f"{recent_change}%" if recent_change is not None else "获取失败",
+        status
+    )
 
 
 # -----------------------
@@ -537,7 +606,7 @@ risk_score = average_score(
 
 
 # -----------------------
-# 关键风险判断
+# 关键判断
 # -----------------------
 credit_warning = (
     (hyg_change is not None and hyg_change < -5)
@@ -681,7 +750,7 @@ else:
 
 
 # -----------------------
-# 第一部分：第一屏结论
+# 一、当前结论
 # -----------------------
 st.subheader("一、当前结论")
 
@@ -709,7 +778,7 @@ st.markdown("---")
 
 
 # -----------------------
-# 第二部分：核心指标卡片
+# 二、核心指标
 # -----------------------
 st.subheader("二、核心指标")
 
@@ -776,7 +845,7 @@ st.markdown("---")
 
 
 # -----------------------
-# 第三部分：四大风险来源
+# 三、风险来源拆解
 # -----------------------
 st.subheader("三、风险来源拆解")
 
@@ -831,7 +900,7 @@ st.markdown("---")
 
 
 # -----------------------
-# 第四部分：核心图表
+# 四、核心指标图表
 # -----------------------
 st.subheader("四、核心指标图表")
 
@@ -847,18 +916,50 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 )
 
 with tab1:
-    show_line_chart(
-        fg_hist_df,
-        "Fear & Greed 恐惧贪婪指数",
-        "分数",
-        threshold_lines=[
-            {"y": 25, "text": "25：极度恐惧"},
-            {"y": 75, "text": "75：极度贪婪"}
-        ]
+    st.markdown("### Fear & Greed 恐惧贪婪指数")
+
+    show_fear_greed_gauge(fg)
+
+    st.markdown(
+        f"""
+当前值：**{round(fg, 1)}**
+
+当前状态：**{fear_status(fg)}**
+
+- 0 - 25：极度恐惧
+- 25 - 45：恐惧
+- 45 - 75：中性
+- 75 - 100：极度贪婪
+"""
     )
-    st.caption("低于25代表极度恐惧，高于75代表极度贪婪。")
+
+    if not fg_hist_df.empty:
+        show_line_chart(
+            fg_hist_df,
+            "Fear & Greed 历史走势",
+            "分数",
+            threshold_lines=[
+                {"y": 25, "text": "25：极度恐惧"},
+                {"y": 75, "text": "75：极度贪婪"}
+            ]
+        )
 
 with tab2:
+    st.markdown("### VIX 恐慌指数")
+
+    vix_recent_change = calc_recent_change_from_series(vix_hist_df, 20)
+    vix_low = calc_min_from_series(vix_hist_df)
+    vix_high = calc_max_from_series(vix_hist_df)
+
+    show_chart_summary(
+        "VIX",
+        vix,
+        vix_low,
+        vix_high,
+        vix_recent_change,
+        vix_status(vix)
+    )
+
     show_line_chart(
         vix_hist_df,
         "VIX恐慌指数",
@@ -868,9 +969,26 @@ with tab2:
             {"y": 30, "text": "30：恐慌区"}
         ]
     )
-    st.caption("VIX越高，说明期权市场给风险保险支付的价格越高。")
+
+    st.caption("VIX越高，说明期权市场为风险保险支付的价格越高。")
 
 with tab3:
+    st.markdown("### RSP 相对 SPY")
+
+    rsp_current = round(float(rsp_vs_spy_series.iloc[-1]["value"]), 2) if not rsp_vs_spy_series.empty else None
+    rsp_low = calc_min_from_series(rsp_vs_spy_series)
+    rsp_high = calc_max_from_series(rsp_vs_spy_series)
+    rsp_recent_change = calc_recent_change_from_series(rsp_vs_spy_series, 20)
+
+    show_chart_summary(
+        "RSP相对SPY",
+        f"{rsp_current}%" if rsp_current is not None else None,
+        f"{rsp_low}%" if rsp_low is not None else None,
+        f"{rsp_high}%" if rsp_high is not None else None,
+        rsp_recent_change,
+        relative_status(rsp_vs_spy)
+    )
+
     show_line_chart(
         rsp_vs_spy_series,
         "RSP相对SPY",
@@ -880,9 +998,26 @@ with tab3:
             {"y": -5, "text": "-5：广度明显偏弱"}
         ]
     )
+
     st.caption("RSP跑输SPY，说明上涨可能集中在少数大权重股票上。")
 
 with tab4:
+    st.markdown("### IWM 相对 SPY")
+
+    iwm_current = round(float(iwm_vs_spy_series.iloc[-1]["value"]), 2) if not iwm_vs_spy_series.empty else None
+    iwm_low = calc_min_from_series(iwm_vs_spy_series)
+    iwm_high = calc_max_from_series(iwm_vs_spy_series)
+    iwm_recent_change = calc_recent_change_from_series(iwm_vs_spy_series, 20)
+
+    show_chart_summary(
+        "IWM相对SPY",
+        f"{iwm_current}%" if iwm_current is not None else None,
+        f"{iwm_low}%" if iwm_low is not None else None,
+        f"{iwm_high}%" if iwm_high is not None else None,
+        iwm_recent_change,
+        relative_status(iwm_vs_spy)
+    )
+
     show_line_chart(
         iwm_vs_spy_series,
         "IWM相对SPY",
@@ -892,9 +1027,26 @@ with tab4:
             {"y": -5, "text": "-5：小盘明显跑输"}
         ]
     )
-    st.caption("IWM跑输SPY，说明资金没有扩散到小盘股，市场广度偏弱。")
+
+    st.caption("IWM跑赢SPY，说明资金开始扩散到小盘股；IWM跑输SPY，说明市场广度偏弱。")
 
 with tab5:
+    st.markdown("### HYG 近60日")
+
+    hyg_current = round(float(hyg_series.iloc[-1]["value"]), 2) if not hyg_series.empty else None
+    hyg_low = calc_min_from_series(hyg_series)
+    hyg_high = calc_max_from_series(hyg_series)
+    hyg_recent_change = calc_recent_change_from_series(hyg_series, 20)
+
+    show_chart_summary(
+        "HYG近60日",
+        f"{hyg_current}%" if hyg_current is not None else None,
+        f"{hyg_low}%" if hyg_low is not None else None,
+        f"{hyg_high}%" if hyg_high is not None else None,
+        hyg_recent_change,
+        credit_status(hyg_change)
+    )
+
     show_line_chart(
         hyg_series,
         "HYG近60日变化",
@@ -904,9 +1056,26 @@ with tab5:
             {"y": -5, "text": "-5：信用风险升温"}
         ]
     )
+
     st.caption("HYG大跌说明高收益债承压，信用市场可能开始担心违约风险。")
 
 with tab6:
+    st.markdown("### JNK 近60日")
+
+    jnk_current = round(float(jnk_series.iloc[-1]["value"]), 2) if not jnk_series.empty else None
+    jnk_low = calc_min_from_series(jnk_series)
+    jnk_high = calc_max_from_series(jnk_series)
+    jnk_recent_change = calc_recent_change_from_series(jnk_series, 20)
+
+    show_chart_summary(
+        "JNK近60日",
+        f"{jnk_current}%" if jnk_current is not None else None,
+        f"{jnk_low}%" if jnk_low is not None else None,
+        f"{jnk_high}%" if jnk_high is not None else None,
+        jnk_recent_change,
+        credit_status(jnk_change)
+    )
+
     show_line_chart(
         jnk_series,
         "JNK近60日变化",
@@ -916,13 +1085,14 @@ with tab6:
             {"y": -5, "text": "-5：信用风险升温"}
         ]
     )
+
     st.caption("JNK与HYG互相验证，如果两者同步大跌，要警惕信用风险。")
 
 st.markdown("---")
 
 
 # -----------------------
-# 第五部分：指标意义
+# 五、指标意义说明
 # -----------------------
 st.subheader("五、指标意义说明")
 
@@ -973,7 +1143,7 @@ st.markdown("---")
 
 
 # -----------------------
-# 第六部分：加仓计划
+# 六、加仓计划
 # -----------------------
 st.subheader("六、美股回调加仓计划")
 
