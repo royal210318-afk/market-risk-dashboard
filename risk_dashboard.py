@@ -579,6 +579,40 @@ def cross_asset_status(tlt_change, gld_change):
     return "跨资产中性"
 
 
+
+# =========================================================
+# 状态说明文案
+# =========================================================
+BREADTH_EXPLANATIONS = {
+    "广度正常": "市场普涨或回调正常，广度无异常。",
+    "广度较差": "弱势股领跌或只有少数个股支撑，警惕风险。",
+    "广度偏弱": "上涨动力减弱，资金参与度下降，建议保持审慎。",
+    "广度较好": "资金扩散至中小盘，市场参与度高，利于多头。",
+    "获取失败": "无法获取市场广度数据，请检查数据源。"
+}
+
+CREDIT_EXPLANATIONS = {
+    "信用稳定": "垃圾债走势平稳，市场风险偏好正常，可持有风险资产。",
+    "信用风险升温": "HYG/JNK 出现明显抛售，信用利差可能扩大，需降低高风险仓位。",
+    "信用稳定偏强": "垃圾债反弹，信用风险溢价收窄，市场环境开始回暖。",
+    "信用偏弱": "HYG/JNK 下跌趋势明显，需警惕流动性压力。",
+    "获取失败": "无法获取信用市场数据，请检查数据源。"
+}
+
+CROSS_ASSET_EXPLANATIONS = {
+    "跨资产中性": "宏观环境平稳，无显著压力，建议按原定投计划执行。",
+    "通胀或货币信用压力": "黄金涨债跌，通胀忧虑升温，建议减仓高估值资产。",
+    "避险或衰退担忧": "金债同涨，市场避险情绪浓，建议降低整体仓位。",
+    "利率压力偏大": "长期美债大跌，利率上行抑制估值，建议检查杠杆。",
+    "利率压力缓和": "长期美债大涨，融资环境改善，对成长股有利。",
+    "获取失败": "无法获取宏观数据，请检查网络连接。"
+}
+
+
+def explanation_text(status, mapping):
+    return mapping.get(status, "暂无说明。")
+
+
 def score_fear(fg):
     if fg is None:
         return None
@@ -1145,13 +1179,30 @@ with main_tab:
 
     c4, c5, c6 = st.columns(3)
     c4.metric("QQQ 纳斯达克100回调", f"{qqq_dd}%" if qqq_dd is not None else "获取失败", drawdown_status(qqq_dd))
-    c5.metric("RSP 相对 SPY", f"{rsp_vs_spy}%" if rsp_vs_spy is not None else "获取失败", relative_status(rsp_vs_spy))
-    c6.metric("IWM 相对 SPY", f"{iwm_vs_spy}%" if iwm_vs_spy is not None else "获取失败", relative_status(iwm_vs_spy))
+
+    rsp_status = relative_status(rsp_vs_spy)
+    iwm_status = relative_status(iwm_vs_spy)
+
+    c5.metric("RSP 相对 SPY", f"{rsp_vs_spy}%" if rsp_vs_spy is not None else "获取失败", rsp_status)
+    c5.caption(explanation_text(rsp_status, BREADTH_EXPLANATIONS))
+
+    c6.metric("IWM 相对 SPY", f"{iwm_vs_spy}%" if iwm_vs_spy is not None else "获取失败", iwm_status)
+    c6.caption(explanation_text(iwm_status, BREADTH_EXPLANATIONS))
 
     c7, c8, c9 = st.columns(3)
-    c7.metric("HYG 近60日", f"{hyg_change}%" if hyg_change is not None else "获取失败", credit_status(hyg_change))
-    c8.metric("JNK 近60日", f"{jnk_change}%" if jnk_change is not None else "获取失败", credit_status(jnk_change))
-    c9.metric("跨资产状态", cross_asset_status(tlt_change, gld_change))
+
+    hyg_status = credit_status(hyg_change)
+    jnk_status = credit_status(jnk_change)
+    macro_status = cross_asset_status(tlt_change, gld_change)
+
+    c7.metric("HYG 近60日", f"{hyg_change}%" if hyg_change is not None else "获取失败", hyg_status)
+    c7.caption(explanation_text(hyg_status, CREDIT_EXPLANATIONS))
+
+    c8.metric("JNK 近60日", f"{jnk_change}%" if jnk_change is not None else "获取失败", jnk_status)
+    c8.caption(explanation_text(jnk_status, CREDIT_EXPLANATIONS))
+
+    c9.metric("跨资产状态", macro_status)
+    c9.caption(explanation_text(macro_status, CROSS_ASSET_EXPLANATIONS))
 
     if fg is None:
         st.warning("Fear & Greed 未获取到实时数据。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
@@ -1237,6 +1288,8 @@ with main_tab:
                 {"y": -5, "text": "-5：广度明显偏弱"},
             ],
         )
+        st.info(f"当前广度判断：{relative_status(rsp_vs_spy)}。{explanation_text(relative_status(rsp_vs_spy), BREADTH_EXPLANATIONS)}")
+        st.caption("RSP 是等权标普500，SPY 是市值加权标普500。RSP 跑输 SPY，通常说明上涨集中在少数大权重股票上。")
 
     with tab4:
         st.markdown("### IWM 相对 SPY")
@@ -1257,6 +1310,8 @@ with main_tab:
                 {"y": -5, "text": "-5：小盘明显跑输"},
             ],
         )
+        st.info(f"当前广度判断：{relative_status(iwm_vs_spy)}。{explanation_text(relative_status(iwm_vs_spy), BREADTH_EXPLANATIONS)}")
+        st.caption("IWM 是小盘股 ETF。IWM 跑赢 SPY，通常说明资金正在向中小盘扩散，市场参与度更好。")
 
     with tab5:
         st.markdown("### HYG 近60日")
@@ -1478,6 +1533,36 @@ with explain_tab:
     })
 
     st.dataframe(meaning_table, use_container_width=True, hide_index=True)
+
+    st.markdown("### 状态说明")
+    status_table = pd.DataFrame({
+        "类别": [
+            "市场广度", "市场广度", "市场广度", "市场广度",
+            "信用市场", "信用市场", "信用市场", "信用市场",
+            "跨资产", "跨资产", "跨资产", "跨资产", "跨资产"
+        ],
+        "状态": [
+            "广度正常", "广度较差", "广度偏弱", "广度较好",
+            "信用稳定", "信用风险升温", "信用稳定偏强", "信用偏弱",
+            "跨资产中性", "通胀或货币信用压力", "避险或衰退担忧", "利率压力偏大", "利率压力缓和"
+        ],
+        "说明": [
+            BREADTH_EXPLANATIONS["广度正常"],
+            BREADTH_EXPLANATIONS["广度较差"],
+            BREADTH_EXPLANATIONS["广度偏弱"],
+            BREADTH_EXPLANATIONS["广度较好"],
+            CREDIT_EXPLANATIONS["信用稳定"],
+            CREDIT_EXPLANATIONS["信用风险升温"],
+            CREDIT_EXPLANATIONS["信用稳定偏强"],
+            CREDIT_EXPLANATIONS["信用偏弱"],
+            CROSS_ASSET_EXPLANATIONS["跨资产中性"],
+            CROSS_ASSET_EXPLANATIONS["通胀或货币信用压力"],
+            CROSS_ASSET_EXPLANATIONS["避险或衰退担忧"],
+            CROSS_ASSET_EXPLANATIONS["利率压力偏大"],
+            CROSS_ASSET_EXPLANATIONS["利率压力缓和"],
+        ]
+    })
+    st.dataframe(status_table, use_container_width=True, hide_index=True)
 
     st.markdown("### 加仓规则")
     plan = pd.DataFrame({
