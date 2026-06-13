@@ -26,40 +26,88 @@ except Exception:
 st.markdown("""
 <style>
 .stApp {
-    background: #ffffff;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 34%, #ffffff 100%);
     color: #111827;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.4rem;
     padding-bottom: 3rem;
     max-width: 1180px;
 }
 
-.dashboard-header {
-    padding: 1.2rem 0 1.4rem 0;
-    border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 1.6rem;
+/* 顶部 Hero */
+.hero {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 52%, #fff7ed 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    padding: 1.6rem 1.7rem;
+    margin: 0.4rem 0 1.6rem 0;
+    box-shadow: 0 12px 28px rgba(17, 24, 39, 0.07);
 }
 
-.dashboard-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #111827;
+.hero-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.hero-title {
+    font-size: 2.15rem;
+    line-height: 1.15;
+    font-weight: 900;
+    color: #0f172a;
     margin: 0;
-    letter-spacing: -0.6px;
+    letter-spacing: -0.9px;
 }
 
-.dashboard-subtitle {
-    font-size: 0.9rem;
-    color: #6b7280;
-    margin-top: 0.4rem;
+.hero-subtitle {
+    font-size: 0.92rem;
+    color: #64748b;
+    margin-top: 0.55rem;
+    line-height: 1.65;
 }
 
+.hero-pill {
+    display: inline-block;
+    background: #ffffff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 0.38rem 0.72rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-bottom: 0.6rem;
+}
+
+.hero-status {
+    min-width: 220px;
+    background: rgba(255,255,255,0.78);
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 0.9rem 1rem;
+}
+
+.hero-status-label {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.hero-status-value {
+    color: #111827;
+    font-size: 1.15rem;
+    font-weight: 900;
+    margin-top: 0.25rem;
+}
+
+/* Streamlit组件 */
 h1, h2, h3 {
     color: #111827 !important;
-    font-weight: 800 !important;
+    font-weight: 850 !important;
 }
 
 [data-testid="stMetric"] {
@@ -73,18 +121,18 @@ h1, h2, h3 {
 [data-testid="stMetricLabel"] {
     color: #4b5563 !important;
     font-size: 0.82rem !important;
-    font-weight: 650 !important;
+    font-weight: 700 !important;
 }
 
 [data-testid="stMetricValue"] {
     color: #111827 !important;
-    font-size: 1.75rem !important;
-    font-weight: 800 !important;
+    font-size: 1.7rem !important;
+    font-weight: 850 !important;
 }
 
 [data-testid="stMetricDelta"] {
     font-size: 0.78rem !important;
-    font-weight: 650 !important;
+    font-weight: 700 !important;
 }
 
 .stAlert {
@@ -95,14 +143,14 @@ h1, h2, h3 {
 }
 
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0.4rem;
+    gap: 0.45rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .stTabs [data-baseweb="tab"] {
     color: #374151 !important;
-    font-weight: 650 !important;
-    padding: 0.7rem 1rem !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 1rem !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -121,33 +169,26 @@ hr {
     margin: 2rem 0 !important;
 }
 
-.small-note {
-    color: #6b7280;
-    font-size: 0.86rem;
-    line-height: 1.7;
-}
-
-.section-card {
+.big-action {
     background: #f9fafb;
     border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 1rem 1.1rem;
-    margin: 0.8rem 0;
+    border-radius: 18px;
+    padding: 1.1rem 1.2rem;
+    margin: 0.8rem 0 1rem 0;
 }
 
-.badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 700;
+.big-action-title {
+    font-size: 1.08rem;
+    font-weight: 850;
+    color: #111827;
+    margin-bottom: 0.45rem;
 }
 
-.badge-green { background: #dcfce7; color: #166534; }
-.badge-yellow { background: #fef9c3; color: #854d0e; }
-.badge-orange { background: #ffedd5; color: #9a3412; }
-.badge-red { background: #fee2e2; color: #991b1b; }
-.badge-purple { background: #f3e8ff; color: #6b21a8; }
+.big-action-body {
+    font-size: 0.96rem;
+    color: #374151;
+    line-height: 1.75;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -182,13 +223,27 @@ THRESHOLD_COLOR = "#dc2626"
 # =========================================================
 # 数据获取
 # =========================================================
-@st.cache_data(ttl=1800)
+@st.cache_data(ttl=600)
 def get_fear_greed_data():
+    """获取 CNN Fear & Greed 实时数据。失败时返回 None，不用 50 冒充实时数据。"""
+    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
     try:
-        url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-        r = requests.get(url, timeout=20)
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://www.cnn.com/markets/fear-and-greed",
+        }
+        r = requests.get(url, headers=headers, timeout=20)
+        r.raise_for_status()
         data = r.json()
-        score = float(data["fear_and_greed"]["score"])
+
+        fg_data = data.get("fear_and_greed", {})
+        score = fg_data.get("score")
+
+        if score is None:
+            return None, pd.DataFrame(columns=["date", "value"])
+
+        score = round(float(score), 1)
 
         rows = []
         historical = data.get("fear_and_greed_historical", {})
@@ -216,7 +271,7 @@ def get_fear_greed_data():
         return score, hist_df
 
     except Exception:
-        return 50.0, pd.DataFrame(columns=["date", "value"])
+        return None, pd.DataFrame(columns=["date", "value"])
 
 
 @st.cache_data(ttl=1800)
@@ -238,6 +293,7 @@ def get_yf_history(symbol, period="6mo"):
 
 @st.cache_data(ttl=1800)
 def get_twelve_history(symbol):
+    """Twelve Data 优先，失败自动转 Yahoo。"""
     if not API_KEY:
         return get_yf_history(symbol, period="1y")
 
@@ -354,17 +410,18 @@ def series_change(df, days=20):
 
 
 # =========================================================
-# 状态和评分
+# 状态与评分
 # =========================================================
 def fear_status(fg):
+    if fg is None:
+        return "获取失败"
     if fg < 25:
         return "极度恐惧"
     elif fg < 45:
         return "恐惧"
     elif fg < 75:
         return "中性"
-    else:
-        return "极度贪婪"
+    return "极度贪婪"
 
 
 def vix_status(vix):
@@ -376,8 +433,7 @@ def vix_status(vix):
         return "低波动"
     elif vix < 30:
         return "风险升温"
-    else:
-        return "恐慌区"
+    return "恐慌区"
 
 
 def drawdown_status(dd):
@@ -389,8 +445,7 @@ def drawdown_status(dd):
         return "轻度回调"
     elif dd > -20:
         return "明显回调"
-    else:
-        return "深度回调"
+    return "深度回调"
 
 
 def relative_status(diff):
@@ -402,8 +457,7 @@ def relative_status(diff):
         return "广度偏弱"
     elif diff > 2:
         return "广度较好"
-    else:
-        return "广度正常"
+    return "广度正常"
 
 
 def credit_status(change):
@@ -415,8 +469,7 @@ def credit_status(change):
         return "信用偏弱"
     elif change > 2:
         return "信用稳定偏强"
-    else:
-        return "信用稳定"
+    return "信用稳定"
 
 
 def cross_asset_status(tlt_change, gld_change):
@@ -430,8 +483,7 @@ def cross_asset_status(tlt_change, gld_change):
         return "利率压力偏大"
     elif tlt_change > 5:
         return "利率压力缓和"
-    else:
-        return "跨资产中性"
+    return "跨资产中性"
 
 
 def score_fear(fg):
@@ -511,6 +563,20 @@ def average_score(values):
     return round(sum(valid) / len(valid))
 
 
+def weighted_risk_score(emotion, trend, breadth, credit, cross_asset):
+    """
+    五层风险模型：
+    情绪 30% + 趋势 20% + 广度 20% + 信用 20% + 跨资产 10%
+    """
+    return round(
+        emotion * 0.30
+        + trend * 0.20
+        + breadth * 0.20
+        + credit * 0.20
+        + cross_asset * 0.10
+    )
+
+
 def risk_level(score):
     if score < 20:
         return "低风险"
@@ -521,8 +587,38 @@ def risk_level(score):
     return "高风险"
 
 
+def decide_action(risk_score, fg, vix, hyg_change, jnk_change, rsp_vs_spy, iwm_vs_spy):
+    credit_warning = (hyg_change is not None and hyg_change < -5) or (jnk_change is not None and jnk_change < -5)
+    good_buy_window = vix is not None and fg is not None and vix > 30 and fg < 25 and not credit_warning
+    fomo_warning = vix is not None and fg is not None and vix <= 15 and fg > 75
+    breadth_warning = (rsp_vs_spy is not None and rsp_vs_spy < -5) or (iwm_vs_spy is not None and iwm_vs_spy < -5)
+
+    if credit_warning:
+        return "暂停抄底", "🔴 信用风险升温", "暂停抄底，现金为主", "HYG/JNK 同步大跌，说明信用市场承压。不要急着抄底，先等信用市场稳定。"
+
+    if good_buy_window:
+        return "重点加仓", "🟠 优质加仓窗口", "重点加仓：可投入30%~60%", "VIX超过30，Fear & Greed低于25，且信用市场稳定，是较好的分批加仓窗口。"
+
+    if fomo_warning:
+        return "避免追高", "🟣 市场过热", "避免追高：暂不加仓", "市场不愿意给风险定价，FOMO情绪较强，不适合大幅加仓。"
+
+    if 20 <= risk_score < 40 and not credit_warning:
+        return "加仓30%", "🟡 第一档回调", "执行第一档：加仓30%", "建议投入预备资金的30%。累计投入30%，剩余现金70%。"
+
+    if 40 <= risk_score < 60 and not credit_warning:
+        return "再加仓30%", "🟠 第二档回调", "执行第二档：再加仓30%", "建议再投入预备资金的30%。累计投入60%，剩余现金40%。"
+
+    if risk_score >= 60 and not credit_warning:
+        return "加仓40%", "🔴 极端恐慌", "执行第三档：加仓40%", "建议投入剩余预备资金40%。前提是HYG/JNK没有明显崩盘。"
+
+    if breadth_warning:
+        return "观察不追高", "🟡 上涨广度偏弱", "观察为主：不追高", "RSP或IWM相对SPY明显走弱，说明上涨可能集中在少数权重股上。"
+
+    return "正常定投", "🟢 正常市场", "正常定投：不动用回调资金", "市场风险较低，按原计划持续定投即可。回调加仓资金暂不动用。"
+
+
 # =========================================================
-# 图表
+# 图表函数
 # =========================================================
 def show_line_chart(df, title, y_title, threshold_lines=None):
     if df is None or df.empty:
@@ -530,7 +626,6 @@ def show_line_chart(df, title, y_title, threshold_lines=None):
         return
 
     fig = go.Figure()
-
     fig.add_trace(
         go.Scatter(
             x=df["date"],
@@ -559,11 +654,14 @@ def show_line_chart(df, title, y_title, threshold_lines=None):
         height=360,
         **PLOTLY_LAYOUT,
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
 
 def show_fear_greed_gauge(fg):
+    if fg is None:
+        st.warning("Fear & Greed 实时数据获取失败")
+        return
+
     fig = go.Figure(
         go.Indicator(
             mode="gauge+number",
@@ -585,7 +683,6 @@ def show_fear_greed_gauge(fg):
             },
         )
     )
-
     fig.update_layout(
         height=320,
         paper_bgcolor="#ffffff",
@@ -593,7 +690,6 @@ def show_fear_greed_gauge(fg):
         font=dict(color="#111827"),
         margin=dict(l=30, r=30, t=50, b=10),
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -605,12 +701,8 @@ def show_chart_summary(current, low, high, recent_change, status, unit="%"):
     d.metric("近20日变化", f"{recent_change}{unit}" if recent_change is not None else "获取失败", status)
 
 
-def badge_html(text, kind="green"):
-    return f'<span class="badge badge-{kind}">{text}</span>'
-
-
 # =========================================================
-# 加载当前数据
+# 当前数据
 # =========================================================
 fg, fg_hist_df = get_fear_greed_data()
 vix, vix_hist_df = get_vix_data()
@@ -649,63 +741,31 @@ breadth_score = average_score([score_relative(rsp_vs_spy), score_relative(iwm_vs
 credit_score = average_score([score_credit(hyg_change), score_credit(jnk_change)])
 cross_asset_score = average_score([score_cross_asset(tlt_change, gld_change)])
 
-risk_score = average_score([emotion_score, trend_score, breadth_score, credit_score, cross_asset_score])
+risk_score = weighted_risk_score(emotion_score, trend_score, breadth_score, credit_score, cross_asset_score)
 
-credit_warning = (hyg_change is not None and hyg_change < -5) or (jnk_change is not None and jnk_change < -5)
-good_buy_window = vix is not None and fg is not None and vix > 30 and fg < 25 and not credit_warning
-fomo_warning = vix is not None and fg is not None and vix <= 15 and fg > 75
-breadth_warning = (rsp_vs_spy is not None and rsp_vs_spy < -5) or (iwm_vs_spy is not None and iwm_vs_spy < -5)
-normal_pullback = risk_score >= 20 and risk_score < 60 and not credit_warning
-
-
-if credit_warning:
-    buy_grade = "D级风险"
-    buy_action = "信用市场恶化，暂停抄底，优先保留现金。"
-    scene = "🔴 信用风险升温"
-    advice = "当前策略：暂停抄底，优先观察信用市场。\n\nHYG/JNK 同步大跌时，不要急着抄底，先等信用市场稳定。"
-elif good_buy_window:
-    buy_grade = "A级机会"
-    buy_action = "恐慌充分但信用未失控，可以重点分批加仓。"
-    scene = "🟠 优质加仓窗口"
-    advice = "当前策略：重点关注加仓机会。\n\nVIX 超过30，Fear & Greed 低于25，同时信用市场稳定，是较好的分批加仓窗口。"
-elif fomo_warning:
-    buy_grade = "E级过热"
-    buy_action = "市场过度乐观，不适合追高。"
-    scene = "🟣 市场过热"
-    advice = "当前策略：谨慎追高。\n\nVIX 极低且情绪过热时，市场不愿意给风险定价。"
-elif normal_pullback:
-    buy_grade = "B级机会"
-    buy_action = "市场出现回调但信用未失控，可以按计划分批加仓。"
-    if risk_score < 40:
-        scene = "🟡 第一档回调"
-        advice = "当前策略：执行第一档加仓。\n\n建议投入预备资金：30%。\n\n累计投入：30%，剩余现金：70%。"
-    else:
-        scene = "🟠 第二档回调"
-        advice = "当前策略：执行第二档加仓。\n\n建议再投入预备资金：30%。\n\n累计投入：60%，剩余现金：40%。"
-elif breadth_warning:
-    buy_grade = "C级观察"
-    buy_action = "上涨广度偏弱，谨慎观察，不盲目追高。"
-    scene = "🟡 上涨广度偏弱"
-    advice = "当前策略：谨慎观察。\n\nRSP 或 IWM 相对 SPY 明显走弱，说明上涨可能集中在少数权重股上。"
-elif risk_score >= 60:
-    buy_grade = "B级机会"
-    buy_action = "恐慌较高，但仍需确认信用市场是否稳定。"
-    scene = "🔴 极端恐慌"
-    advice = "当前策略：执行第三档加仓。\n\n建议投入剩余资金：40%。\n\n但前提是 HYG/JNK 没有明显崩盘。"
-else:
-    buy_grade = "C级观察"
-    buy_action = "市场风险较低，继续正常定投，回调资金暂不动用。"
-    scene = "🟢 正常市场"
-    advice = "当前策略：正常定投。\n\n市场风险较低，按原计划持续定投即可。\n\n回调加仓资金暂不动用。"
+buy_grade, scene, action_title, advice = decide_action(
+    risk_score, fg, vix, hyg_change, jnk_change, rsp_vs_spy, iwm_vs_spy
+)
 
 
 # =========================================================
 # 页头
 # =========================================================
-st.markdown("""
-<div class="dashboard-header">
-    <p class="dashboard-title">📈 市场风险仪表盘</p>
-    <p class="dashboard-subtitle">美股回调加仓版 · 情绪 · 波动率 · 市场广度 · 信用风险 · 跨资产联动</p>
+st.markdown(f"""
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <span class="hero-pill">Market Risk Dashboard</span>
+      <p class="hero-title">📈 市场风险仪表盘</p>
+      <p class="hero-subtitle">美股回调加仓版 · 情绪 30% · 趋势 20% · 广度 20% · 信用 20% · 跨资产 10%</p>
+    </div>
+    <div class="hero-status">
+      <div class="hero-status-label">当前操作</div>
+      <div class="hero-status-value">{buy_grade}</div>
+      <div class="hero-status-label" style="margin-top:0.45rem;">综合风险</div>
+      <div class="hero-status-value">{risk_score}/100</div>
+    </div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -720,16 +780,24 @@ with main_tab:
 
     a, b, c = st.columns(3)
     a.metric("当前市场状态", scene)
-    b.metric("当前买入等级", buy_grade)
+    b.metric("操作动作", buy_grade)
     c.metric("综合风险评分", f"{risk_score}/100", risk_level(risk_score))
 
-    st.info(buy_action)
+    st.markdown(
+        f"""
+<div class="big-action">
+  <div class="big-action-title">{action_title}</div>
+  <div class="big-action-body">{advice}</div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
     st.markdown("---")
     st.subheader("二、核心指标")
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("恐惧贪婪指数", round(fg, 1), fear_status(fg))
+    c1.metric("恐惧贪婪指数", round(fg, 1) if fg is not None else "获取失败", fear_status(fg))
     c2.metric("VIX 恐慌指数", vix if vix is not None else "获取失败", vix_status(vix))
     c3.metric("SPY 标普500回调", f"{spy_dd}%" if spy_dd is not None else "获取失败", drawdown_status(spy_dd))
 
@@ -743,18 +811,22 @@ with main_tab:
     c8.metric("JNK 近60日", f"{jnk_change}%" if jnk_change is not None else "获取失败", credit_status(jnk_change))
     c9.metric("跨资产状态", cross_asset_status(tlt_change, gld_change))
 
+    if fg is None:
+        st.warning("Fear & Greed 未获取到实时数据。请稍后刷新，或在 Streamlit Cloud 中 Clear cache 后重试。")
+
     st.markdown("---")
-    st.subheader("三、风险来源拆解")
+    st.subheader("三、五层风险来源拆解")
 
     s1, s2, s3, s4, s5 = st.columns(5)
-    s1.metric("情绪风险", f"{emotion_score}/100", risk_level(emotion_score))
-    s2.metric("趋势风险", f"{trend_score}/100", risk_level(trend_score))
-    s3.metric("广度风险", f"{breadth_score}/100", risk_level(breadth_score))
-    s4.metric("信用风险", f"{credit_score}/100", risk_level(credit_score))
-    s5.metric("跨资产风险", f"{cross_asset_score}/100", risk_level(cross_asset_score))
+    s1.metric("情绪风险 30%", f"{emotion_score}/100", risk_level(emotion_score))
+    s2.metric("趋势风险 20%", f"{trend_score}/100", risk_level(trend_score))
+    s3.metric("广度风险 20%", f"{breadth_score}/100", risk_level(breadth_score))
+    s4.metric("信用风险 20%", f"{credit_score}/100", risk_level(credit_score))
+    s5.metric("跨资产风险 10%", f"{cross_asset_score}/100", risk_level(cross_asset_score))
 
     risk_source_table = pd.DataFrame({
         "模块": ["情绪层", "趋势层", "市场广度", "信用市场", "跨资产"],
+        "权重": ["30%", "20%", "20%", "20%", "10%"],
         "代表指标": ["Fear & Greed、VIX", "SPY回调、QQQ回调", "RSP相对SPY、IWM相对SPY", "HYG、JNK", "TLT、GLD"],
         "当前判断": [
             f"{fear_status(fg)} / {vix_status(vix)}",
@@ -762,13 +834,6 @@ with main_tab:
             f"RSP：{relative_status(rsp_vs_spy)}，IWM：{relative_status(iwm_vs_spy)}",
             f"HYG：{credit_status(hyg_change)}，JNK：{credit_status(jnk_change)}",
             cross_asset_status(tlt_change, gld_change),
-        ],
-        "解释": [
-            "判断市场是恐惧、贪婪，还是机构正在买保险。",
-            "判断指数距离高点有多远，是否已经进入回调区。",
-            "判断上涨是否由多数股票推动，还是少数权重股支撑。",
-            "判断企业融资环境是否恶化，是否存在系统性风险。",
-            "判断利率、黄金和避险情绪是否出现异常联动。",
         ],
     })
     st.dataframe(risk_source_table, use_container_width=True, hide_index=True)
@@ -783,7 +848,7 @@ with main_tab:
     with tab1:
         st.markdown("### Fear & Greed 恐惧贪婪指数")
         show_fear_greed_gauge(fg)
-        st.markdown(f"当前值：**{round(fg, 1)}**  当前状态：**{fear_status(fg)}**")
+        st.markdown(f"当前值：**{round(fg, 1) if fg is not None else '获取失败'}**  当前状态：**{fear_status(fg)}**")
         st.markdown("- 0–25：极度恐惧；25–45：恐惧；45–75：中性；75–100：极度贪婪")
         if not fg_hist_df.empty:
             show_line_chart(
@@ -897,7 +962,7 @@ with main_tab:
 # =========================================================
 with backtest_tab:
     st.subheader("历史回测")
-    st.caption("选择历史交易日，查看该日风险评分与加仓等级。历史 Fear & Greed 免费接口无法稳定还原，因此历史情绪层主要使用 VIX。")
+    st.caption("选择历史交易日，查看该日风险评分与加仓动作。历史 Fear & Greed 免费接口无法稳定还原，因此历史情绪层主要使用 VIX。")
 
     query_date = st.date_input(
         "选择查询日期",
@@ -973,25 +1038,17 @@ with backtest_tab:
             q_breadth = average_score([score_relative(q_rsp_vs_spy), score_relative(q_iwm_vs_spy)])
             q_credit = average_score([score_credit(q_hyg_change), score_credit(q_jnk_change)])
             q_cross = average_score([score_cross_asset(q_tlt_change, q_gld_change)])
-            q_risk = average_score([q_emotion, q_trend, q_breadth, q_credit, q_cross])
+            q_risk = weighted_risk_score(q_emotion, q_trend, q_breadth, q_credit, q_cross)
 
-            q_credit_warning = (q_hyg_change is not None and q_hyg_change < -5) or (q_jnk_change is not None and q_jnk_change < -5)
-            if q_credit_warning:
-                q_grade, q_scene, q_action = "D级风险", "🔴 信用风险升温", "暂停抄底，保留现金。"
-            elif q_vix is not None and q_vix > 30 and not q_credit_warning:
-                q_grade, q_scene, q_action = "A级机会", "🟠 优质加仓窗口", "VIX超过30且信用稳定，可以重点分批加仓。"
-            elif 20 <= q_risk < 60 and not q_credit_warning:
-                q_grade, q_scene, q_action = "B级机会", "🟡/🟠 回调区", "市场回调但信用未失控，可以按计划分批加仓。"
-            elif q_risk >= 60:
-                q_grade, q_scene, q_action = "B级机会", "🔴 极端恐慌", "恐慌较高，但需确认信用市场是否稳定。"
-            else:
-                q_grade, q_scene, q_action = "C级观察", "🟢 正常市场", "正常定投，回调资金暂不动用。"
+            q_grade, q_scene, q_action_title, q_action = decide_action(
+                q_risk, None, q_vix, q_hyg_change, q_jnk_change, q_rsp_vs_spy, q_iwm_vs_spy
+            )
 
             st.markdown("### 回测结果")
 
             r1, r2, r3 = st.columns(3)
             r1.metric("市场状态", q_scene)
-            r2.metric("买入等级", q_grade)
+            r2.metric("操作动作", q_grade)
             r3.metric("综合风险评分", f"{q_risk}/100", risk_level(q_risk))
 
             st.info(q_action)
@@ -1054,16 +1111,17 @@ with explain_tab:
 
     st.markdown("### 加仓规则")
     plan = pd.DataFrame({
-        "等级": ["A级机会", "B级机会", "C级观察", "D级风险", "E级过热"],
+        "操作动作": ["重点加仓", "加仓30%", "再加仓30%", "加仓40%", "正常定投", "暂停抄底", "避免追高"],
         "典型条件": [
             "VIX > 30，Fear & Greed < 25，信用市场稳定",
-            "市场出现回调，信用市场没有失控",
-            "情绪中性，指数接近高位，风险不高",
+            "风险评分20~40，信用市场稳定",
+            "风险评分40~60，信用市场稳定",
+            "风险评分60以上，且信用市场未崩盘",
+            "风险较低，指数接近高位或无明显回调",
             "HYG/JNK同步大跌，信用市场恶化",
             "Fear & Greed > 75，VIX <= 15，市场FOMO",
         ],
-        "动作": ["重点分批加仓", "按计划分批加仓", "正常定投", "暂停抄底", "避免追高"],
-        "预备资金使用": ["可投入30%~60%", "第一档30%，第二档再30%", "0%", "0%", "0%，必要时减仓"],
+        "预备资金使用": ["30%~60%", "30%", "再30%", "剩余40%", "0%", "0%", "0%"],
     })
 
     st.dataframe(plan, use_container_width=True, hide_index=True)
