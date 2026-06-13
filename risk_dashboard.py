@@ -668,33 +668,79 @@ def risk_level(score):
 
 
 def decide_action(risk_score, fg, vix, hyg_change, jnk_change, rsp_vs_spy, iwm_vs_spy):
-    credit_warning = (hyg_change is not None and hyg_change < -5) or (jnk_change is not None and jnk_change < -5)
-    good_buy_window = vix is not None and fg is not None and vix > 30 and fg < 25 and not credit_warning
-    fomo_warning = vix is not None and fg is not None and vix <= 15 and fg > 75
-    breadth_warning = (rsp_vs_spy is not None and rsp_vs_spy < -5) or (iwm_vs_spy is not None and iwm_vs_spy < -5)
+    """
+    操作动作只保留六类：
+    1. 避免追高
+    2. 暂停抄底
+    3. 正常定投
+    4. 加仓30%
+    5. 再加仓30%
+    6. 加仓剩余40%
+
+    资金比例严格按照你的三档规则：
+    20~40：30%
+    40~60：再30%
+    60以上：剩余40%
+    """
+
+    credit_warning = (
+        (hyg_change is not None and hyg_change < -5)
+        or (jnk_change is not None and jnk_change < -5)
+    )
+
+    fomo_warning = (
+        vix is not None
+        and fg is not None
+        and vix <= 15
+        and fg > 75
+    )
 
     if credit_warning:
-        return "暂停抄底", "🔴 信用风险升温", "暂停抄底，现金为主", "HYG/JNK 同步大跌，说明信用市场承压。不要急着抄底，先等信用市场稳定。"
-
-    if good_buy_window:
-        return "重点加仓", "🟠 优质加仓窗口", "重点加仓：可投入30%~60%", "VIX超过30，Fear & Greed低于25，且信用市场稳定，是较好的分批加仓窗口。"
+        return (
+            "暂停抄底",
+            "🔴 信用风险升温",
+            "暂停抄底：不加仓，现金为主",
+            "HYG/JNK 同步明显下跌，说明信用市场承压。此时不是普通估值回调，不要急着抄底，先等信用市场稳定。"
+        )
 
     if fomo_warning:
-        return "避免追高", "🟣 市场过热", "避免追高：暂不加仓", "市场不愿意给风险定价，FOMO情绪较强，不适合大幅加仓。"
+        return (
+            "避免追高",
+            "🟣 市场过热",
+            "避免追高：不加仓",
+            "Fear & Greed 高于75，同时 VIX 低于或接近15，说明市场FOMO情绪较强，不适合继续大幅加仓。"
+        )
 
-    if 20 <= risk_score < 40 and not credit_warning:
-        return "加仓30%", "🟡 第一档回调", "执行第一档：加仓30%", "建议投入预备资金的30%。累计投入30%，剩余现金70%。"
+    if risk_score < 20:
+        return (
+            "正常定投",
+            "🟢 正常市场",
+            "正常定投：不动用回调资金",
+            "市场风险较低，按原计划持续定投即可。回调加仓资金暂不动用。"
+        )
 
-    if 40 <= risk_score < 60 and not credit_warning:
-        return "再加仓30%", "🟠 第二档回调", "执行第二档：再加仓30%", "建议再投入预备资金的30%。累计投入60%，剩余现金40%。"
+    if risk_score < 40:
+        return (
+            "加仓30%",
+            "🟡 第一档回调",
+            "第一档加仓：投入预备资金30%",
+            "市场进入第一档回调区间，且信用市场未失控。建议投入预备资金的30%。累计投入30%，剩余现金70%。"
+        )
 
-    if risk_score >= 60 and not credit_warning:
-        return "加仓40%", "🔴 极端恐慌", "执行第三档：加仓40%", "建议投入剩余预备资金40%。前提是HYG/JNK没有明显崩盘。"
+    if risk_score < 60:
+        return (
+            "再加仓30%",
+            "🟠 第二档回调",
+            "第二档加仓：再投入预备资金30%",
+            "市场进入第二档回调区间，且信用市场未失控。建议再投入预备资金的30%。累计投入60%，剩余现金40%。"
+        )
 
-    if breadth_warning:
-        return "观察不追高", "🟡 上涨广度偏弱", "观察为主：不追高", "RSP或IWM相对SPY明显走弱，说明上涨可能集中在少数权重股上。"
-
-    return "正常定投", "🟢 正常市场", "正常定投：不动用回调资金", "市场风险较低，按原计划持续定投即可。回调加仓资金暂不动用。"
+    return (
+        "加仓剩余40%",
+        "🔴 第三档回调",
+        "第三档加仓：投入剩余40%",
+        "市场进入第三档回调区间。若 HYG/JNK 没有明显崩盘，建议投入剩余40%。累计投入100%，剩余现金0%。"
+    )
 
 
 # =========================================================
@@ -1224,17 +1270,25 @@ with explain_tab:
 
     st.markdown("### 加仓规则")
     plan = pd.DataFrame({
-        "操作动作": ["重点加仓", "加仓30%", "再加仓30%", "加仓40%", "正常定投", "暂停抄底", "避免追高"],
-        "典型条件": [
-            "VIX > 30，Fear & Greed < 25，信用市场稳定",
-            "风险评分20~40，信用市场稳定",
-            "风险评分40~60，信用市场稳定",
-            "风险评分60以上，且信用市场未崩盘",
-            "风险较低，指数接近高位或无明显回调",
-            "HYG/JNK同步大跌，信用市场恶化",
-            "Fear & Greed > 75，VIX <= 15，市场FOMO",
+        "操作动作": ["避免追高", "暂停抄底", "正常定投", "加仓30%", "再加仓30%", "加仓剩余40%"],
+        "触发条件": [
+            "Fear & Greed > 75 且 VIX <= 15，市场FOMO明显",
+            "HYG/JNK 同步明显下跌，信用市场恶化",
+            "风险评分 < 20",
+            "风险评分 20~40，信用市场未失控",
+            "风险评分 40~60，信用市场未失控",
+            "风险评分 >= 60，且信用市场未崩盘",
         ],
-        "预备资金使用": ["30%~60%", "30%", "再30%", "剩余40%", "0%", "0%", "0%"],
+        "资金动作": [
+            "不加仓，避免追高",
+            "不加仓，保留现金",
+            "只执行原定投计划",
+            "投入预备资金30%",
+            "再投入预备资金30%",
+            "投入剩余40%",
+        ],
+        "累计投入": ["0%", "0%", "0%", "30%", "60%", "100%"],
+        "剩余现金": ["100%", "100%", "100%", "70%", "40%", "0%"],
     })
 
     st.dataframe(plan, use_container_width=True, hide_index=True)
