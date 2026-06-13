@@ -225,26 +225,12 @@ THRESHOLD_COLOR = "#dc2626"
 # =========================================================
 @st.cache_data(ttl=600)
 def get_fear_greed_data():
-    """获取 CNN Fear & Greed 实时数据。失败时返回 None，不用 50 冒充实时数据。"""
-    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json,text/plain,*/*",
-            "Referer": "https://www.cnn.com/markets/fear-and-greed",
-        }
-        r = requests.get(url, headers=headers, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-
-        fg_data = data.get("fear_and_greed", {})
-        score = fg_data.get("score")
-
-        if score is None:
-            return None, pd.DataFrame(columns=["date", "value"])
-
-        score = round(float(score), 1)
-
+    """
+    获取 Fear & Greed 实时数据。
+    优先 CNN 官方接口；失败后尝试 MacroMicro 页面。
+    两个都失败时返回 None，不再用 50 冒充实时数据。
+    """
+    def parse_history_from_cnn(data):
         rows = []
         historical = data.get("fear_and_greed_historical", {})
         hist_data = historical.get("data", []) if isinstance(historical, dict) else historical
@@ -255,11 +241,13 @@ def get_fear_greed_data():
                 y = item.get("y") or item.get("score") or item.get("value")
                 if x is None or y is None:
                     continue
+
                 try:
                     if isinstance(x, (int, float)):
                         dt = pd.to_datetime(x, unit="ms") if x > 10000000000 else pd.to_datetime(x, unit="s")
                     else:
                         dt = pd.to_datetime(x)
+
                     rows.append({"date": dt, "value": float(y)})
                 except Exception:
                     pass
@@ -268,10 +256,102 @@ def get_fear_greed_data():
         if not hist_df.empty:
             hist_df = hist_df.dropna().sort_values("date").tail(90)
 
-        return score, hist_df
+        return hist_df
+
+    # -----------------------
+    # 来源一：CNN 官方接口
+    # -----------------------
+    cnn_url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://edition.cnn.com/markets/fear-and-greed",
+        }
+
+        r = requests.get(cnn_url, headers=headers, timeout=20)
+        r.raise_for_status()
+
+        data = r.json()
+        fg_data = data.get("fear_and_greed", {})
+        score = fg_data.get("score")
+
+        if score is not None:
+            score = round(float(score), 1)
+            hist_df = parse_history_from_cnn(data)
+            return score, hist_df
 
     except Exception:
-        return None, pd.DataFrame(columns=["date", "value"])
+        pass
+
+    # -----------------------
+    # 来源二：MacroMicro 备用页面
+    # -----------------------
+    # 说明：
+    # MacroMicro 页面展示 CNN Fear & Greed 指数。
+    # 它不是 CNN 官方接口，可能略有延迟；
+    # 但作为备用源，比直接显示“50”更可靠。
+    macro_url = "https://sc.macromicro.me/series/22748/cnn-fear-and-greed"
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://sc.macromicro.me/",
+        }
+
+        r = requests.get(macro_url, headers=headers, timeout=20)
+        r.raise_for_status()
+
+        html = r.text
+
+        import re
+
+        candidates = []
+
+        # 优先在包含 fear / greed / CNN 附近找数值
+        patterns = [
+            r"Fear\s*&\s*Greed[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
+            r"CNN[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
+            r"恐惧[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
+            r"貪婪[^0-9]{0,120}([0-9]{1,3}(?:\.[0-9]+)?)",
+        ]
+
+        for pattern in patterns:
+            for m in re.finditer(pattern, html, flags=re.IGNORECASE):
+                try:
+                    value = float(m.group(1))
+                    if 0 <= value <= 100:
+                        candidates.append(value)
+                except Exception:
+                    pass
+
+        # 兜底：找页面里明显的 0-100 数值
+        # 为避免误取年份/编号，只取小范围数字，并优先靠近页面关键词的区域
+        if not candidates:
+            keywords = ["Fear", "Greed", "CNN", "恐惧", "貪婪", "贪婪"]
+            for kw in keywords:
+                pos = html.lower().find(kw.lower())
+                if pos >= 0:
+                    chunk = html[max(0, pos - 1000): pos + 3000]
+                    nums = re.findall(r"(?<![0-9])([0-9]{1,2}(?:\.[0-9]+)?|100(?:\.0+)?)(?![0-9])", chunk)
+                    for n in nums:
+                        try:
+                            value = float(n)
+                            if 0 <= value <= 100:
+                                candidates.append(value)
+                        except Exception:
+                            pass
+
+        if candidates:
+            score = round(float(candidates[0]), 1)
+            return score, pd.DataFrame(columns=["date", "value"])
+
+    except Exception:
+        pass
+
+    return None, pd.DataFrame(columns=["date", "value"])
 
 
 @st.cache_data(ttl=1800)
