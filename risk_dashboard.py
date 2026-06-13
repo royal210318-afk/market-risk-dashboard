@@ -1,16 +1,3 @@
-下面是按你刚才那套逻辑改好的**完整替换版**。
-`requirements.txt` 需要是：
-
-```txt
-streamlit
-pandas
-requests
-yfinance
-```
-
-`risk_dashboard.py` 全部替换为：
-
-```python
 import streamlit as st
 import requests
 import pandas as pd
@@ -545,4 +532,3 @@ st.markdown("---")
 st.caption(
     f"更新时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
-```
