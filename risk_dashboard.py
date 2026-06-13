@@ -246,6 +246,90 @@ hr {
     font-size: 0.9rem;
     line-height: 1.65;
 }
+
+.signal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
+    margin-top: 0.5rem;
+}
+
+.signal-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 1.05rem 1.1rem;
+    box-shadow: 0 8px 22px rgba(17, 24, 39, 0.06);
+    min-height: 168px;
+}
+
+.signal-title {
+    color: #4b5563;
+    font-size: 0.86rem;
+    font-weight: 850;
+    margin-bottom: 0.5rem;
+}
+
+.signal-value {
+    color: #111827;
+    font-size: 1.9rem;
+    line-height: 1.1;
+    font-weight: 950;
+    letter-spacing: -0.6px;
+    margin-bottom: 0.72rem;
+}
+
+.signal-status {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.22rem 0.62rem;
+    font-size: 0.78rem;
+    font-weight: 850;
+    margin-bottom: 0.62rem;
+}
+
+.signal-desc {
+    color: #4b5563;
+    font-size: 0.86rem;
+    line-height: 1.65;
+}
+
+.status-green {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-blue {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-yellow {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.status-orange {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.status-red {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-gray {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+@media (max-width: 900px) {
+    .signal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -611,6 +695,55 @@ CROSS_ASSET_EXPLANATIONS = {
 
 def explanation_text(status, mapping):
     return mapping.get(status, "暂无说明。")
+
+
+def status_class(status):
+    green_status = [
+        "极度恐惧", "广度较好", "信用稳定", "信用稳定偏强",
+        "利率压力缓和"
+    ]
+    blue_status = [
+        "中性", "广度正常", "跨资产中性", "低波动", "接近高位"
+    ]
+    yellow_status = [
+        "恐惧", "风险升温", "轻度回调", "广度偏弱", "信用偏弱",
+        "避险或衰退担忧"
+    ]
+    orange_status = [
+        "极度贪婪", "明显回调", "通胀或货币信用压力", "利率压力偏大",
+        "过度乐观"
+    ]
+    red_status = [
+        "恐慌区", "深度回调", "广度较差", "信用风险升温", "获取失败"
+    ]
+
+    if status in green_status:
+        return "status-green"
+    if status in blue_status:
+        return "status-blue"
+    if status in yellow_status:
+        return "status-yellow"
+    if status in orange_status:
+        return "status-orange"
+    if status in red_status:
+        return "status-red"
+    return "status-gray"
+
+
+def signal_card(title, value, status, desc):
+    safe_value = value if value is not None else "获取失败"
+    safe_status = status if status is not None else "获取失败"
+    safe_desc = desc if desc else "暂无说明。"
+    color = status_class(safe_status)
+
+    return f"""
+    <div class="signal-card">
+        <div class="signal-title">{title}</div>
+        <div class="signal-value">{safe_value}</div>
+        <div class="signal-status {color}">{safe_status}</div>
+        <div class="signal-desc">{safe_desc}</div>
+    </div>
+    """
 
 
 def score_fear(fg):
@@ -1172,37 +1305,100 @@ with main_tab:
     st.markdown("---")
     st.subheader("二、核心指标")
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("恐惧贪婪指数", round(fg, 1) if fg is not None else "获取失败", fear_status(fg))
-    c2.metric("VIX 恐慌指数", vix if vix is not None else "获取失败", vix_status(vix))
-    c3.metric("SPY 标普500回调", f"{spy_dd}%" if spy_dd is not None else "获取失败", drawdown_status(spy_dd))
-
-    c4, c5, c6 = st.columns(3)
-    c4.metric("QQQ 纳斯达克100回调", f"{qqq_dd}%" if qqq_dd is not None else "获取失败", drawdown_status(qqq_dd))
-
+    fg_status = fear_status(fg)
+    vix_state = vix_status(vix)
+    spy_status = drawdown_status(spy_dd)
+    qqq_status = drawdown_status(qqq_dd)
     rsp_status = relative_status(rsp_vs_spy)
     iwm_status = relative_status(iwm_vs_spy)
-
-    c5.metric("RSP 相对 SPY", f"{rsp_vs_spy}%" if rsp_vs_spy is not None else "获取失败", rsp_status)
-    c5.caption(explanation_text(rsp_status, BREADTH_EXPLANATIONS))
-
-    c6.metric("IWM 相对 SPY", f"{iwm_vs_spy}%" if iwm_vs_spy is not None else "获取失败", iwm_status)
-    c6.caption(explanation_text(iwm_status, BREADTH_EXPLANATIONS))
-
-    c7, c8, c9 = st.columns(3)
-
     hyg_status = credit_status(hyg_change)
     jnk_status = credit_status(jnk_change)
     macro_status = cross_asset_status(tlt_change, gld_change)
 
-    c7.metric("HYG 近60日", f"{hyg_change}%" if hyg_change is not None else "获取失败", hyg_status)
-    c7.caption(explanation_text(hyg_status, CREDIT_EXPLANATIONS))
+    fg_desc_map = {
+        "极度恐惧": "市场情绪极度悲观，若信用市场稳定，可能出现加仓窗口。",
+        "恐惧": "市场情绪偏谨慎，适合观察是否进入回调加仓区。",
+        "中性": "市场情绪没有明显极端信号，按模型综合评分执行。",
+        "极度贪婪": "市场情绪偏FOMO，警惕追高风险。",
+        "获取失败": "无法自动获取数据，可在左侧边栏手动输入。"
+    }
 
-    c8.metric("JNK 近60日", f"{jnk_change}%" if jnk_change is not None else "获取失败", jnk_status)
-    c8.caption(explanation_text(jnk_status, CREDIT_EXPLANATIONS))
+    vix_desc_map = {
+        "过度乐观": "期权市场风险定价偏低，需警惕市场过度乐观。",
+        "低波动": "波动率处于低位，市场短期风险偏好较平稳。",
+        "风险升温": "波动率上升，机构开始提高风险保险价格。",
+        "恐慌区": "VIX进入恐慌区，若信用市场稳定，可能是重要加仓观察窗口。",
+        "获取失败": "无法获取VIX数据，请检查数据源。"
+    }
 
-    c9.metric("跨资产状态", macro_status)
-    c9.caption(explanation_text(macro_status, CROSS_ASSET_EXPLANATIONS))
+    drawdown_desc_map = {
+        "接近高位": "指数距离52周高点较近，尚未形成明显回调。",
+        "轻度回调": "指数出现小幅回撤，属于第一档观察区。",
+        "明显回调": "指数回撤加深，需结合信用市场判断是否加仓。",
+        "深度回调": "指数大幅回撤，若信用未失控，可能进入高性价比区域。",
+        "获取失败": "无法获取指数回撤数据。"
+    }
+
+    signal_html = """
+    <div class="signal-grid">
+    """
+    signal_html += signal_card(
+        "恐惧贪婪指数",
+        round(fg, 1) if fg is not None else "获取失败",
+        fg_status,
+        fg_desc_map.get(fg_status, "暂无说明。")
+    )
+    signal_html += signal_card(
+        "VIX 恐慌指数",
+        vix if vix is not None else "获取失败",
+        vix_state,
+        vix_desc_map.get(vix_state, "暂无说明。")
+    )
+    signal_html += signal_card(
+        "SPY 标普500回调",
+        f"{spy_dd}%" if spy_dd is not None else "获取失败",
+        spy_status,
+        drawdown_desc_map.get(spy_status, "暂无说明。")
+    )
+    signal_html += signal_card(
+        "QQQ 纳斯达克100回调",
+        f"{qqq_dd}%" if qqq_dd is not None else "获取失败",
+        qqq_status,
+        drawdown_desc_map.get(qqq_status, "暂无说明。")
+    )
+    signal_html += signal_card(
+        "RSP 相对 SPY",
+        f"{rsp_vs_spy}%" if rsp_vs_spy is not None else "获取失败",
+        rsp_status,
+        explanation_text(rsp_status, BREADTH_EXPLANATIONS)
+    )
+    signal_html += signal_card(
+        "IWM 相对 SPY",
+        f"{iwm_vs_spy}%" if iwm_vs_spy is not None else "获取失败",
+        iwm_status,
+        explanation_text(iwm_status, BREADTH_EXPLANATIONS)
+    )
+    signal_html += signal_card(
+        "HYG 近60日",
+        f"{hyg_change}%" if hyg_change is not None else "获取失败",
+        hyg_status,
+        explanation_text(hyg_status, CREDIT_EXPLANATIONS)
+    )
+    signal_html += signal_card(
+        "JNK 近60日",
+        f"{jnk_change}%" if jnk_change is not None else "获取失败",
+        jnk_status,
+        explanation_text(jnk_status, CREDIT_EXPLANATIONS)
+    )
+    signal_html += signal_card(
+        "跨资产状态",
+        macro_status,
+        macro_status,
+        explanation_text(macro_status, CROSS_ASSET_EXPLANATIONS)
+    )
+    signal_html += "</div>"
+
+    st.markdown(signal_html, unsafe_allow_html=True)
 
     if fg is None:
         st.warning("Fear & Greed 未获取到实时数据。请在左侧边栏打开链接查看后，勾选“手动输入 Fear & Greed”并填入数值。")
