@@ -24,7 +24,7 @@ except Exception:
 
 
 # =========================================================
-# 明亮专业版样式
+# 明亮专业版样式 (修改了头部的高度和排版)
 # =========================================================
 st.markdown("""
 <style>
@@ -43,28 +43,28 @@ st.markdown("""
     max-width: 1220px;
 }
 
-/* 顶部 Hero 专业版 */
+/* 顶部 Hero 专业版 - 高度变窄 */
 .hero {
     position: relative;
     overflow: hidden;
     background:
         linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 64, 175, 0.92) 52%, rgba(194, 65, 12, 0.90) 100%);
     border: 1px solid rgba(255,255,255,0.26);
-    border-radius: 30px;
-    padding: 2.15rem 2.25rem;
-    margin: 0.3rem 0 1.8rem 0;
-    box-shadow: 0 22px 48px rgba(15, 23, 42, 0.20);
+    border-radius: 20px;
+    padding: 1.25rem 1.8rem;
+    margin: 0.3rem 0 1.5rem 0;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
 }
 
 .hero:before {
     content: "";
     position: absolute;
-    width: 460px;
-    height: 460px;
-    right: -190px;
-    top: -230px;
+    width: 300px;
+    height: 300px;
+    right: -50px;
+    top: -150px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.08);
 }
 
 .hero-top {
@@ -72,14 +72,14 @@ st.markdown("""
     z-index: 2;
     display: flex;
     justify-content: space-between;
-    gap: 1.6rem;
-    align-items: stretch;
-    flex-wrap: wrap;
+    align-items: center; /* 垂直居中对齐 */
+    gap: 1.5rem;
+    flex-wrap: wrap; /* 屏幕过小自动折行 */
 }
 
 .hero-left {
-    min-width: 520px;
     flex: 1;
+    min-width: 300px;
 }
 
 .hero-pill {
@@ -88,73 +88,69 @@ st.markdown("""
     color: #dbeafe;
     border: 1px solid rgba(255,255,255,0.24);
     border-radius: 999px;
-    padding: 0.42rem 0.82rem;
-    font-size: 0.82rem;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
     font-weight: 850;
     letter-spacing: 0.3px;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
 }
 
 .hero-title {
-    font-size: 3.15rem;
-    line-height: 1.05;
+    font-size: 2.1rem;
+    line-height: 1.1;
     font-weight: 950;
     color: #ffffff;
     margin: 0;
-    letter-spacing: -1.5px;
+    letter-spacing: -1px;
 }
 
 .hero-title-cn {
-    font-size: 1.48rem;
+    font-size: 1.1rem;
     line-height: 1.35;
     font-weight: 850;
     color: #e0f2fe;
-    margin-top: 0.58rem;
+    margin-top: 0.3rem;
 }
 
 .hero-subtitle {
-    font-size: 1rem;
-    color: #dbeafe;
-    margin-top: 0.82rem;
-    line-height: 1.65;
+    font-size: 0.9rem;
+    color: #93c5fd;
+    margin-top: 0.4rem;
+    line-height: 1.5;
 }
 
+/* 右侧卡片区域：横向排列 */
 .hero-cards {
-    min-width: 350px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.85rem;
-    align-content: stretch;
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-shrink: 0;
 }
 
 .hero-card {
     background: rgba(255,255,255,0.14);
     border: 1px solid rgba(255,255,255,0.22);
     backdrop-filter: blur(8px);
-    border-radius: 20px;
-    padding: 1.05rem 1.1rem;
+    border-radius: 16px;
+    padding: 0.8rem 1rem;
+    min-width: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .hero-card-label {
     color: #dbeafe;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 800;
+    margin-bottom: 0.2rem;
 }
 
 .hero-card-value {
     color: #ffffff;
-    font-size: 1.65rem;
+    font-size: 1.4rem;
     font-weight: 950;
-    margin-top: 0.35rem;
     letter-spacing: -0.4px;
-}
-
-.hero-card-wide {
-    grid-column: span 2;
-}
-
-.hero-card-wide .hero-card-value {
-    font-size: 1.95rem;
 }
 
 /* 页面组件 */
@@ -1098,7 +1094,7 @@ st.markdown(f"""
       <p class="hero-subtitle">情绪 30% · 趋势 20% · 广度 20% · 信用 20% · 跨资产 10%</p>
     </div>
     <div class="hero-cards">
-      <div class="hero-card hero-card-wide">
+      <div class="hero-card">
         <div class="hero-card-label">当前操作</div>
         <div class="hero-card-value">{buy_grade}</div>
       </div>
@@ -1108,7 +1104,7 @@ st.markdown(f"""
       </div>
       <div class="hero-card">
         <div class="hero-card-label">市场状态</div>
-        <div class="hero-card-value" style="font-size:1.35rem;">{scene}</div>
+        <div class="hero-card-value" style="font-size:1.15rem;">{scene}</div>
       </div>
     </div>
   </div>
@@ -1196,7 +1192,7 @@ with main_tab:
     with tab1:
         st.markdown("### Fear & Greed 恐惧贪婪指数")
         show_fear_greed_gauge(fg)
-        st.markdown(f"当前值：**{round(fg, 1) if fg is not None else '获取失败'}**  当前状态：**{fear_status(fg)}**")
+        st.markdown(f"当前值：**{round(fg, 1) if fg is not None else '获取失败'}** 当前状态：**{fear_status(fg)}**")
         st.markdown("- 0–25：极度恐惧；25–45：恐惧；45–75：中性；75–100：极度贪婪")
         if not fg_hist_df.empty:
             show_line_chart(
